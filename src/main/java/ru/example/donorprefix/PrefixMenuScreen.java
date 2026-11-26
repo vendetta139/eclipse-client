@@ -136,6 +136,8 @@ public class PrefixMenuScreen extends Screen {
         ModernButtonWidget testButton;
         ModernButtonWidget deleteButton;
         String initialText;
+        String lastPreviewRaw;
+        MutableText cachedPreview;
 
         PrefixCard(String initialText) {
             this.initialText = initialText != null ? initialText : "";
@@ -165,6 +167,9 @@ public class PrefixMenuScreen extends Screen {
         Consumer<Float> sliderSetter;
         float sliderMin, sliderMax, sliderStep;
         String sliderSuffix;
+        float lastSliderVal = Float.NaN;
+        Text cachedSliderText = null;
+        Text cachedTitleText = null;
 
         // Для Color
         Supplier<Integer> colorGetter;
@@ -1014,64 +1019,45 @@ public class PrefixMenuScreen extends Screen {
             // 1. Отрисовка главного окна (Dark Obsidian Glassmorphism)
             try {
                 renderMainDialog(context, openProgress);
-            } catch (Throwable t) {
-                System.err.println("[ClickGUI] Error in renderMainDialog: " + t);
-            }
+            } catch (Throwable ignored) {}
 
             // 2. Сайдбар
             try {
                 renderSidebar(context, openProgress);
-            } catch (Throwable t) {
-                System.err.println("[ClickGUI] Error in renderSidebar: " + t);
-            }
+            } catch (Throwable ignored) {}
 
             // 3. Шапка (Header)
             try {
                 renderHeader(context, openProgress);
-            } catch (Throwable t) {
-                System.err.println("[ClickGUI] Error in renderHeader: " + t);
-            }
+            } catch (Throwable ignored) {}
 
             // 4. Контент выбранной вкладки с Scissor Clipping
             try {
                 renderTabContent(context, mouseX, mouseY, openProgress);
-            } catch (Throwable t) {
-                System.err.println("[ClickGUI] Error in renderTabContent: " + t);
-            }
+            } catch (Throwable ignored) {}
 
             // 5. Стандартные дочерние виджеты (кнопки вкладок, поля ввода)
             try {
                 super.render(context, mouseX, mouseY, delta);
-            } catch (Throwable t) {
-                System.err.println("[ClickGUI] Error in super.render: " + t);
-            }
+            } catch (Throwable ignored) {}
 
             // 6. Скроллбар
             try {
                 renderScrollbar(context, openProgress);
-            } catch (Throwable t) {
-                System.err.println("[ClickGUI] Error in renderScrollbar: " + t);
-            }
+            } catch (Throwable ignored) {}
 
             // 7. Модальная палитра выбора цвета (поверх всех слоев)
             if (colorPicker != null && colorPicker.isVisible()) {
                 try {
                     colorPicker.render(context, this.client, mouseX, mouseY);
-                } catch (Throwable t) {
-                    System.err.println("[ClickGUI] Error in colorPicker: " + t);
-                }
+                } catch (Throwable ignored) {}
             }
 
             // 8. Всплывающее уведомление (Toast)
             try {
                 renderToast(context);
-            } catch (Throwable t) {
-                System.err.println("[ClickGUI] Error in renderToast: " + t);
-            }
-        } catch (Throwable t) {
-            System.err.println("[ClickGUI] Fatal error in render: " + t);
-            t.printStackTrace();
-        }
+            } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {}
     }
 
     private void renderMainDialog(DrawContext context, float alpha) {
@@ -1225,12 +1211,15 @@ public class PrefixMenuScreen extends Screen {
                         contentLeft + 36, cardY + 7, RenderUtils.multiplyAlpha(0xFF94A3B8, alpha));
             }
 
-            // Живой предпросмотр префикса (Minecraft Chat Simulation)
+            // Живой предпросмотр префикса (кэшируется по тексту)
             String curText = card.field != null ? card.field.getText() : card.initialText;
-            MutableText preview = ColorFormatter.format(curText, true);
+            if (!curText.equals(card.lastPreviewRaw) || card.cachedPreview == null) {
+                card.lastPreviewRaw = curText;
+                card.cachedPreview = ColorFormatter.format(curText, true);
+            }
             int prevX = contentLeft + 195;
             int prevY = cardY + 7;
-            RenderUtils.drawTextWithShadow(context, this.textRenderer, preview, prevX, prevY, RenderUtils.multiplyAlpha(0xFFFFFFFF, alpha));
+            RenderUtils.drawTextWithShadow(context, this.textRenderer, card.cachedPreview, prevX, prevY, RenderUtils.multiplyAlpha(0xFFFFFFFF, alpha));
         }
 
         // Блок "Параметры ротации"
@@ -1424,8 +1413,16 @@ public class PrefixMenuScreen extends Screen {
                         EclipseTheme.ACCENT_INDIGO,
                         EclipseTheme.ACCENT_GOLD);
 
-                String valStr = String.format(Locale.ROOT, "%.2f", val) + r.sliderSuffix;
-                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(valStr),
+                if (Float.compare(r.lastSliderVal, val) != 0 || r.cachedSliderText == null) {
+                    r.lastSliderVal = val;
+                    int scaled = Math.round(val * 100.0f);
+                    int abs = Math.abs(scaled);
+                    String str = (scaled < 0 ? "-" : "") + (abs / 100) + "."
+                            + ((abs % 100) < 10 ? "0" : "") + (abs % 100)
+                            + (r.sliderSuffix != null ? r.sliderSuffix : "");
+                    r.cachedSliderText = Text.literal(str);
+                }
+                RenderUtils.drawTextWithShadow(context, this.textRenderer, r.cachedSliderText,
                         r.x + r.width - 48, r.y + (r.height - 8) / 2, RenderUtils.multiplyAlpha(0xFFEAECEF, alpha));
             }
             case COLOR -> {
@@ -1865,16 +1862,22 @@ public class PrefixMenuScreen extends Screen {
             if (r.sliderSetter != null) {
                 r.sliderSetter.accept(steppedVal);
                 ru.eclipse.client.module.ModuleManager.getInstance().syncConfigsToModules();
-                visualConfig.save();
+                pendingSliderSave = true;
             }
         } catch (Throwable ignored) {}
     }
+
+    private boolean pendingSliderSave = false;
 
     @Override
     public boolean mouseReleased(Click click) {
         try {
             isDraggingScrollbar = false;
             activeDraggingSlider = null;
+            if (pendingSliderSave) {
+                pendingSliderSave = false;
+                if (visualConfig != null) visualConfig.save();
+            }
             if (colorPicker != null && colorPicker.isVisible()) {
                 colorPicker.mouseReleased(click.x(), click.y(), click.button());
             }
@@ -1972,10 +1975,12 @@ public class PrefixMenuScreen extends Screen {
             isClosing = true;
             closeStartTime = System.currentTimeMillis();
             try {
+                pendingSliderSave = false;
                 collectCurrentPrefixFields();
                 ru.eclipse.client.module.ModuleManager.getInstance().syncConfigsToModules();
                 if (config != null) config.save();
                 if (visualConfig != null) visualConfig.save();
+                ru.eclipse.client.core.EclipseStateSync.getInstance().flushPendingSave();
             } catch (Throwable ignored) {}
         }
     }
@@ -1983,10 +1988,12 @@ public class PrefixMenuScreen extends Screen {
     @Override
     public void close() {
         try {
+            pendingSliderSave = false;
             collectCurrentPrefixFields();
             ru.eclipse.client.module.ModuleManager.getInstance().syncConfigsToModules();
             if (config != null) config.save();
             if (visualConfig != null) visualConfig.save();
+            ru.eclipse.client.core.EclipseStateSync.getInstance().flushPendingSave();
         } catch (Throwable ignored) {}
         super.close();
     }

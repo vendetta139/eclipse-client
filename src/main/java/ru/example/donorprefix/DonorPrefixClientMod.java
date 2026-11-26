@@ -6,16 +6,16 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.eclipse.client.module.ModuleManager;
 import ru.eclipse.client.module.impl.AutoPrefixModule;
+import ru.eclipse.client.module.impl.TargetHUDModule;
 import ru.example.donorprefix.visual.TargetHUDManager;
 import ru.example.donorprefix.visual.VisualConfig;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Random;
 
 /**
@@ -75,65 +75,20 @@ public class DonorPrefixClientMod implements ClientModInitializer {
         LOGGER.info("[EclipseClient] Загружено {} префиксов, кулдаун {} сек.",
                 mod.config.prefixes.size(), mod.config.cooldownSeconds);
 
-        KeyBinding kb = createKeyBinding("key.donor-prefix-client.open_menu", GLFW.GLFW_KEY_P, "key.categories.donor-prefix-client");
-        if (kb != null) {
-            try {
-                openMenuKey = KeyBindingHelper.registerKeyBinding(kb);
-            } catch (Throwable t) {
-                LOGGER.warn("[EclipseClient] KeyBindingHelper failed, using GLFW fallback for P", t);
-                openMenuKey = kb;
-            }
-        }
+        KeyBinding.Category category = KeyBinding.Category.create(Identifier.of(MOD_ID, "eclipse"));
+        openMenuKey = KeyBindingHelper.registerKeyBinding(
+                new KeyBinding("key.donor-prefix-client.open_menu", GLFW.GLFW_KEY_P, category)
+        );
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> mod.tickCounter = 0);
         ClientTickEvents.END_CLIENT_TICK.register(mod::onTick);
     }
 
-    private static Object createCategoryArg(Class<?> categoryClass, String categoryName) {
-        if (categoryClass == String.class) {
-            return categoryName;
-        }
-        for (Method m : categoryClass.getMethods()) {
-            if (java.lang.reflect.Modifier.isStatic(m.getModifiers()) && m.getReturnType() == categoryClass && m.getParameterCount() == 1) {
-                if (m.getParameterTypes()[0] == String.class) {
-                    try {
-                        return m.invoke(null, categoryName);
-                    } catch (Throwable ignored) {}
-                }
-            }
-        }
-        for (Field f : categoryClass.getFields()) {
-            if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) && f.getType() == categoryClass) {
-                try {
-                    return f.get(null);
-                } catch (Throwable ignored) {}
-            }
-        }
-        return null;
-    }
-
-    private static KeyBinding createKeyBinding(String translationKey, int defaultKey, String category) {
-        try {
-            for (java.lang.reflect.Constructor<?> c : KeyBinding.class.getConstructors()) {
-                Class<?>[] params = c.getParameterTypes();
-                if (params.length == 3 && params[0] == String.class && (params[1] == int.class || params[1] == Integer.class)) {
-                    Object catArg = createCategoryArg(params[2], category);
-                    if (catArg != null) {
-                        try {
-                            return (KeyBinding) c.newInstance(translationKey, defaultKey, catArg);
-                        } catch (Throwable ignored) {}
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            LOGGER.error("[EclipseClient] Error creating KeyBinding", t);
-        }
-        return null;
-    }
-
     private void onTick(MinecraftClient client) {
         try {
-            this.config = ClientPrefixConfig.loadOrCreate();
+            if (this.config == null) {
+                this.config = ClientPrefixConfig.loadOrCreate();
+            }
 
             if (client.currentScreen == null) {
                 boolean pressed = false;
@@ -159,7 +114,10 @@ public class DonorPrefixClientMod implements ClientModInitializer {
                 }
             }
 
-            if (client.targetedEntity instanceof net.minecraft.entity.LivingEntity living && living.isAlive() && living != client.player) {
+            TargetHUDModule targetHud = ModuleManager.TARGET_HUD;
+            if (targetHud != null && targetHud.isEnabled()
+                    && client.targetedEntity instanceof net.minecraft.entity.LivingEntity living
+                    && living.isAlive() && living != client.player) {
                 TargetHUDManager.setTarget(living);
             }
 
@@ -176,7 +134,7 @@ public class DonorPrefixClientMod implements ClientModInitializer {
                 tickCounter = 0;
                 sendCurrentPrefixCommand(client);
 
-                AutoPrefixModule autoPrefix = ModuleManager.getInstance().getModule(AutoPrefixModule.class);
+                AutoPrefixModule autoPrefix = ModuleManager.AUTO_PREFIX;
                 boolean randomOrder = autoPrefix != null && autoPrefix.getRandom().isEnabled();
                 if (randomOrder && config.prefixes.size() > 1) {
                     int next = prefixIndex;
@@ -196,17 +154,17 @@ public class DonorPrefixClientMod implements ClientModInitializer {
             return false;
         }
         try {
-            String command = String.format(template, prefixValue);
+            String command = (template != null && template.contains("%s"))
+                    ? template.replace("%s", prefixValue)
+                    : (template + " " + prefixValue);
             if (command.startsWith("/")) {
                 command = command.substring(1);
             }
             if (client.player != null && client.player.networkHandler != null) {
                 client.player.networkHandler.sendChatCommand(command);
-                LOGGER.info("[EclipseClient] Отправлена команда: /{}", command);
                 return true;
             } else if (client.getNetworkHandler() != null) {
                 client.getNetworkHandler().sendChatCommand(command);
-                LOGGER.info("[EclipseClient] Отправлена команда: /{}", command);
                 return true;
             }
         } catch (Throwable e) {

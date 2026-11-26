@@ -12,6 +12,11 @@ import ru.example.donorprefix.visual.VisualConfig;
  */
 public class CpsHudElement extends HudElement {
 
+    private int lastLmb = Integer.MIN_VALUE;
+    private int lastRmb = Integer.MIN_VALUE;
+    private String cachedText = "0 │ 0 CPS";
+    private int cachedWidth = 80;
+
     public CpsHudElement() {
         super("cps", "CPS", 80, 16);
     }
@@ -23,14 +28,18 @@ public class CpsHudElement extends HudElement {
 
         int lmb = CPSCounter.getLeftCps();
         int rmb = CPSCounter.getRightCps();
-        String text = lmb + " │ " + rmb + " CPS";
-        int textW = client.textRenderer.getWidth(text);
-        this.width = textW + 16;
+        if (lmb != lastLmb || rmb != lastRmb) {
+            lastLmb = lmb;
+            lastRmb = rmb;
+            cachedText = lmb + " │ " + rmb + " CPS";
+            cachedWidth = client.textRenderer.getWidth(cachedText) + 16;
+        }
+        this.width = cachedWidth;
         this.height = 16;
 
         // Отрисовка СТРОГО от (0, 0)
         RenderUtils.drawPill(context, 0, 0, this.width, this.height, cfg.themeBgColor, cfg.themeOutlineColor);
-        RenderUtils.drawTextWithShadow(context, client.textRenderer, text, 8, 4, cfg.themeTextColor);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedText, 8, 4, cfg.themeTextColor);
     }
 
     @Override

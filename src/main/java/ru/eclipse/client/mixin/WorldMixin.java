@@ -17,42 +17,33 @@ public abstract class WorldMixin {
 
     @Inject(method = "getTimeOfDay", at = @At("HEAD"), cancellable = true)
     private void onGetTimeOfDay(CallbackInfoReturnable<Long> cir) {
-        if (this.isClient()) {
-            TimeChangerModule mod = ModuleManager.getInstance().getModule(TimeChangerModule.class);
-            if (mod != null && mod.isEnabled()) {
-                long fixed = mod.getFixedTime();
-                if (fixed >= 0) {
-                    cir.setReturnValue(fixed);
-                }
-            }
+        TimeChangerModule mod = ModuleManager.TIME_CHANGER;
+        if (mod == null || !mod.isEnabled() || !this.isClient()) return;
+        long fixed = mod.getFixedTime();
+        if (fixed >= 0) {
+            cir.setReturnValue(fixed);
         }
     }
 
     @Inject(method = "getRainGradient", at = @At("HEAD"), cancellable = true)
     private void onGetRainGradient(float delta, CallbackInfoReturnable<Float> cir) {
-        if (this.isClient()) {
-            WeatherChangerModule mod = ModuleManager.getInstance().getModule(WeatherChangerModule.class);
-            if (mod != null && mod.isEnabled()) {
-                if (mod.getMode().is("Clear")) {
-                    cir.setReturnValue(0.0f);
-                } else if (mod.getMode().is("Rain") || mod.getMode().is("Thunder")) {
-                    cir.setReturnValue(1.0f);
-                }
-            }
+        WeatherChangerModule mod = ModuleManager.WEATHER_CHANGER;
+        if (mod == null || !mod.isEnabled() || !this.isClient()) return;
+        if (mod.getMode().is("Clear")) {
+            cir.setReturnValue(0.0f);
+        } else if (mod.getMode().is("Rain") || mod.getMode().is("Thunder")) {
+            cir.setReturnValue(1.0f);
         }
     }
 
     @Inject(method = "getThunderGradient", at = @At("HEAD"), cancellable = true)
     private void onGetThunderGradient(float delta, CallbackInfoReturnable<Float> cir) {
-        if (this.isClient()) {
-            WeatherChangerModule mod = ModuleManager.getInstance().getModule(WeatherChangerModule.class);
-            if (mod != null && mod.isEnabled()) {
-                if (mod.getMode().is("Clear") || mod.getMode().is("Rain")) {
-                    cir.setReturnValue(0.0f);
-                } else if (mod.getMode().is("Thunder")) {
-                    cir.setReturnValue(1.0f);
-                }
-            }
+        WeatherChangerModule mod = ModuleManager.WEATHER_CHANGER;
+        if (mod == null || !mod.isEnabled() || !this.isClient()) return;
+        if (mod.getMode().is("Clear") || mod.getMode().is("Rain")) {
+            cir.setReturnValue(0.0f);
+        } else if (mod.getMode().is("Thunder")) {
+            cir.setReturnValue(1.0f);
         }
     }
 }

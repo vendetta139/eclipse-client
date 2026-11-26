@@ -25,8 +25,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -47,7 +50,16 @@ public final class UpdateChecker {
 
     private static final AtomicBoolean CHECK_IN_FLIGHT = new AtomicBoolean(false);
     private static final AtomicBoolean SCHEDULER_STARTED = new AtomicBoolean(false);
+    private static final ExecutorService HTTP_EXECUTOR = new ThreadPoolExecutor(
+            0, 2, 15L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+            r -> {
+                Thread t = new Thread(r, "Eclipse-UpdateHttp");
+                t.setDaemon(true);
+                return t;
+            }
+    );
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .executor(HTTP_EXECUTOR)
             .connectTimeout(Duration.ofSeconds(5))
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();

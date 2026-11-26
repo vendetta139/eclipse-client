@@ -9,9 +9,6 @@ import net.minecraft.util.math.MathHelper;
 import ru.example.donorprefix.gui.RenderUtils;
 import ru.example.donorprefix.visual.VisualConfig;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * HUD-виджет Armor HUD:
  * Отображает 4 элемента надетой брони (Шлем, Нагрудник, Поножи, Ботинки) с полосами и цифрами прочности.
@@ -22,6 +19,23 @@ public class ArmorHudElement extends HudElement {
     public static final int HUD_WIDTH = 56;
     public static final int ITEM_HEIGHT = 18;
     public static final int TOTAL_HEIGHT = 4 * ITEM_HEIGHT + 8; // 80
+
+    private static final EquipmentSlot[] ARMOR_SLOTS = {
+            EquipmentSlot.HEAD,
+            EquipmentSlot.CHEST,
+            EquipmentSlot.LEGS,
+            EquipmentSlot.FEET
+    };
+    private static final ItemStack[] PREVIEW_ARMOR = {
+            new ItemStack(Items.NETHERITE_HELMET),
+            new ItemStack(Items.NETHERITE_CHESTPLATE),
+            new ItemStack(Items.NETHERITE_LEGGINGS),
+            new ItemStack(Items.NETHERITE_BOOTS)
+    };
+
+    private final ItemStack[] slotStacks = new ItemStack[4];
+    private final int[] lastValue = {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
+    private final String[] cachedValueStr = {"", "", "", ""};
 
     public ArmorHudElement() {
         super("armorhud", "Armor HUD", HUD_WIDTH, TOTAL_HEIGHT);
@@ -36,42 +50,26 @@ public class ArmorHudElement extends HudElement {
         RenderUtils.drawRoundedRect(context, 0, 0, this.width, this.height, 8, cfg.themeBgColor);
         RenderUtils.drawRoundedOutline(context, 0, 0, this.width, this.height, 8, cfg.themeOutlineColor);
 
-        // 2. Получение экипированных предметов
-        List<ItemStack> items = new ArrayList<>();
+        // 2. Получение экипированных предметов без аллокаций коллекций/ItemStack
+        ItemStack[] renderStacks = PREVIEW_ARMOR;
         if (client.player != null) {
-            EquipmentSlot[] slots = {
-                    EquipmentSlot.HEAD,
-                    EquipmentSlot.CHEST,
-                    EquipmentSlot.LEGS,
-                    EquipmentSlot.FEET
-            };
             boolean hasAny = false;
-            for (EquipmentSlot slot : slots) {
-                ItemStack stack = client.player.getEquippedStack(slot);
-                items.add(stack);
+            for (int i = 0; i < 4; i++) {
+                ItemStack stack = client.player.getEquippedStack(ARMOR_SLOTS[i]);
+                slotStacks[i] = stack;
                 if (stack != null && !stack.isEmpty()) {
                     hasAny = true;
                 }
             }
-            // Если игрок голый — в редакторе показываем превью
-            if (!hasAny) {
-                items.clear();
-                items.add(new ItemStack(Items.NETHERITE_HELMET));
-                items.add(new ItemStack(Items.NETHERITE_CHESTPLATE));
-                items.add(new ItemStack(Items.NETHERITE_LEGGINGS));
-                items.add(new ItemStack(Items.NETHERITE_BOOTS));
+            if (hasAny) {
+                renderStacks = slotStacks;
             }
-        } else {
-            // Превью-слоты
-            items.add(new ItemStack(Items.NETHERITE_HELMET));
-            items.add(new ItemStack(Items.NETHERITE_CHESTPLATE));
-            items.add(new ItemStack(Items.NETHERITE_LEGGINGS));
-            items.add(new ItemStack(Items.NETHERITE_BOOTS));
         }
 
         // 3. Отрисовка всех 4 слотов строго внутри высоты элемента
         int curY = 4;
-        for (ItemStack stack : items) {
+        for (int i = 0; i < 4; i++) {
+            ItemStack stack = renderStacks[i];
             if (stack != null && !stack.isEmpty()) {
                 context.drawItem(stack, 3, curY);
 
@@ -92,12 +90,20 @@ public class ArmorHudElement extends HudElement {
                     context.fill(barX, barY, barX + barW, barY + barH, 0x66000000);
                     context.fill(barX, barY, barX + (int) (barW * ratio), barY + barH, barColor);
 
-                    String dmgStr = String.valueOf(curDmg);
-                    RenderUtils.drawTextWithShadow(context, client.textRenderer, dmgStr, barX, curY + 2, cfg.themeTextColor);
+                    if (lastValue[i] != curDmg) {
+                        lastValue[i] = curDmg;
+                        cachedValueStr[i] = Integer.toString(curDmg);
+                    }
+                    RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedValueStr[i], barX, curY + 2, cfg.themeTextColor);
                 } else {
                     int count = stack.getCount();
                     if (count > 1) {
-                        RenderUtils.drawTextWithShadow(context, client.textRenderer, "x" + count, 24, curY + 5, cfg.themeSubtextColor);
+                        int key = -count;
+                        if (lastValue[i] != key) {
+                            lastValue[i] = key;
+                            cachedValueStr[i] = "x" + count;
+                        }
+                        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedValueStr[i], 24, curY + 5, cfg.themeSubtextColor);
                     } else {
                         RenderUtils.drawTextWithShadow(context, client.textRenderer, "100%", 24, curY + 5, cfg.themeTextColor);
                     }

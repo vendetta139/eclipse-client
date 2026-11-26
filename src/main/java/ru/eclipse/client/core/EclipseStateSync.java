@@ -16,8 +16,10 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Единый менеджер локальной конфигурации ECLIPSE CLIENT.
@@ -27,10 +29,18 @@ public final class EclipseStateSync {
     private static final Logger LOGGER = LoggerFactory.getLogger("EclipseConfig");
     private static final EclipseStateSync INSTANCE = new EclipseStateSync();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    private static final long SAVE_DEBOUNCE_MS = 350L;
+
+    private static final ScheduledExecutorService SAVE_EXECUTOR = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "Eclipse-ConfigSaver");
+        t.setDaemon(true);
+        return t;
+    });
 
     private File configFile;
     private volatile boolean initialized = false;
     private volatile boolean isSaving = false;
+    private ScheduledFuture<?> pendingSaveTask = null;
 
     public static EclipseStateSync getInstance() {
         return INSTANCE;
@@ -164,6 +174,21 @@ public final class EclipseStateSync {
                 }
             }
         }
+    }
+
+    public synchronized void saveStateDebounced() {
+        if (pendingSaveTask != null) {
+            pendingSaveTask.cancel(false);
+        }
+        pendingSaveTask = SAVE_EXECUTOR.schedule(this::saveState, SAVE_DEBOUNCE_MS, TimeUnit.MILLISECONDS);
+    }
+
+    public synchronized void flushPendingSave() {
+        if (pendingSaveTask != null) {
+            pendingSaveTask.cancel(false);
+            pendingSaveTask = null;
+        }
+        saveState();
     }
 
     public synchronized void saveState() {

@@ -270,6 +270,6 @@ public class VisualConfig {
 
     public void save() {
         INSTANCE = this;
-        EclipseStateSync.getInstance().saveState();
+        EclipseStateSync.getInstance().saveStateDebounced();
     }
 }

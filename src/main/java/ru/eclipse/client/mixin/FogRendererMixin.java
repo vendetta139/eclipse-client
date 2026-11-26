@@ -22,7 +22,7 @@ public abstract class FogRendererMixin {
 
     @Inject(method = "getFogBuffer", at = @At("HEAD"), cancellable = true)
     private void onGetFogBuffer(FogRenderer.FogType type, CallbackInfoReturnable<GpuBufferSlice> cir) {
-        NoFogModule mod = ModuleManager.getInstance().getModule(NoFogModule.class);
+        NoFogModule mod = ModuleManager.NO_FOG;
         if (mod == null || !mod.isEnabled()) {
             return;
         }

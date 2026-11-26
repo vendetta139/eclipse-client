@@ -1,7 +1,6 @@
 package ru.eclipse.client.module;
 
 import net.minecraft.client.MinecraftClient;
-import ru.eclipse.client.event.EventBus;
 import ru.eclipse.client.module.setting.Setting;
 
 import java.util.ArrayList;
@@ -13,7 +12,7 @@ public abstract class Module {
     private final String name;
     private final String description;
     private final Category category;
-    private boolean enabled;
+    private volatile boolean enabled;
     private int keybind;
     private final List<Setting<?>> settings = new ArrayList<>();
 
@@ -37,10 +36,8 @@ public abstract class Module {
         if (this.enabled != enabled) {
             this.enabled = enabled;
             if (this.enabled) {
-                EventBus.register(this);
                 onEnable();
             } else {
-                EventBus.unregister(this);
                 onDisable();
             }
         }

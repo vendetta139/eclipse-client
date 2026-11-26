@@ -123,6 +123,6 @@ public class ClientPrefixConfig {
 
     public void save() {
         INSTANCE = this;
-        EclipseStateSync.getInstance().saveState();
+        EclipseStateSync.getInstance().saveStateDebounced();
     }
 }

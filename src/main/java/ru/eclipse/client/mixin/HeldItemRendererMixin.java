@@ -26,8 +26,18 @@ public abstract class HeldItemRendererMixin {
     private void onRenderFirstPersonItem(AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand, float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices, OrderedRenderCommandQueue commandQueue, int light, CallbackInfo ci) {
         if (matrices == null) return;
 
-        ViewModelModule mod = ModuleManager.getInstance().getModule(ViewModelModule.class);
-        if (mod != null && mod.isEnabled()) {
+        ViewModelModule mod = ModuleManager.VIEW_MODEL;
+        boolean modEnabled = mod != null && mod.isEnabled();
+        VisualConfig cfg = VisualConfig.getCurrentOrNull();
+        boolean hasCfgScale = cfg != null && Math.abs(cfg.handScale - 1.0f) > 0.01f;
+        boolean hasCfgShield = cfg != null && cfg.smallShield;
+        boolean hasCfgBlockHit = cfg != null && cfg.blockHit;
+
+        if (!modEnabled && !hasCfgScale && !hasCfgShield && !hasCfgBlockHit) {
+            return;
+        }
+
+        if (modEnabled) {
             float posX = mod.getPosX().getFloatValue();
             float posY = mod.getPosY().getFloatValue();
             float posZ = mod.getPosZ().getFloatValue();
@@ -36,23 +46,29 @@ public abstract class HeldItemRendererMixin {
                 posX = -posX;
             }
 
-            matrices.translate(posX, posY, posZ);
-            matrices.scale(mod.getScaleX().getFloatValue(), mod.getScaleY().getFloatValue(), mod.getScaleZ().getFloatValue());
+            if (posX != 0.0f || posY != 0.0f || posZ != 0.0f) {
+                matrices.translate(posX, posY, posZ);
+            }
+            float sx = mod.getScaleX().getFloatValue();
+            float sy = mod.getScaleY().getFloatValue();
+            float sz = mod.getScaleZ().getFloatValue();
+            if (sx != 1.0f || sy != 1.0f || sz != 1.0f) {
+                matrices.scale(sx, sy, sz);
+            }
         }
 
-        VisualConfig cfg = VisualConfig.getInstance();
-        if (Math.abs(cfg.handScale - 1.0f) > 0.01f) {
+        if (hasCfgScale) {
             float s = cfg.handScale;
             matrices.scale(s, s, s);
         }
 
-        boolean lowShield = (mod != null && mod.isEnabled() && mod.getLowShield().isEnabled()) || cfg.smallShield;
-        if (lowShield && item != null && isShield(item)) {
+        boolean lowShield = (modEnabled && mod.getLowShield().isEnabled()) || hasCfgShield;
+        if (lowShield && item != null && !item.isEmpty() && item.isOf(Items.SHIELD)) {
             matrices.translate(0.0f, -0.18f, 0.0f);
         }
 
-        boolean blockHit = (mod != null && mod.isEnabled() && mod.getBlockHit().isEnabled()) || cfg.blockHit;
-        if (blockHit && hand == Hand.MAIN_HAND && item != null && isSword(item)) {
+        boolean blockHit = (modEnabled && mod.getBlockHit().isEnabled()) || hasCfgBlockHit;
+        if (blockHit && hand == Hand.MAIN_HAND && item != null && !item.isEmpty() && isSword(item)) {
             MinecraftClient client = MinecraftClient.getInstance();
             boolean isBlocking = player.isUsingItem()
                     || (client != null && client.options != null && client.options.useKey.isPressed() && client.currentScreen == null);
@@ -67,15 +83,6 @@ public abstract class HeldItemRendererMixin {
 
     @Unique
     private static boolean isSword(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return false;
-        if (stack.isIn(ItemTags.SWORDS)) return true;
-        return stack.getItem().toString().toLowerCase().contains("sword");
-    }
-
-    @Unique
-    private static boolean isShield(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return false;
-        if (stack.isOf(Items.SHIELD)) return true;
-        return stack.getItem().toString().toLowerCase().contains("shield");
+        return stack.isIn(ItemTags.SWORDS);
     }
 }

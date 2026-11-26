@@ -14,8 +14,9 @@ public abstract class LightmapTextureManagerMixin {
 
     @Inject(method = "getBrightness(Lnet/minecraft/world/dimension/DimensionType;I)F", at = @At("HEAD"), cancellable = true)
     private static void onGetBrightness(DimensionType type, int lightLevel, CallbackInfoReturnable<Float> cir) {
-        FullbrightModule mod = ModuleManager.getInstance().getModule(FullbrightModule.class);
-        if (mod != null && mod.isEnabled() && (mod.getMode().is("Gamma") || mod.getMode().is("Both"))) {
+        FullbrightModule mod = ModuleManager.FULLBRIGHT;
+        if (mod == null || !mod.isEnabled()) return;
+        if (mod.getMode().is("Gamma") || mod.getMode().is("Both")) {
             cir.setReturnValue(1.0f);
         }
     }

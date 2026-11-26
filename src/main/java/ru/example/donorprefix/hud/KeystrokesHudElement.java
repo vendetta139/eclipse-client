@@ -20,6 +20,19 @@ public class KeystrokesHudElement extends HudElement {
     public static final int TOTAL_WIDTH = KEY_SIZE * 3 + GAP * 2; // 72
     public static final int TOTAL_HEIGHT = 86; // 22 + 3 + 22 + 3 + 22 + 3 + 11 = 86
 
+    private static final Text LABEL_W = Text.literal("W").formatted(Formatting.BOLD);
+    private static final Text LABEL_A = Text.literal("A").formatted(Formatting.BOLD);
+    private static final Text LABEL_S = Text.literal("S").formatted(Formatting.BOLD);
+    private static final Text LABEL_D = Text.literal("D").formatted(Formatting.BOLD);
+    private static final Text LABEL_LMB = Text.literal("LMB").formatted(Formatting.BOLD);
+    private static final Text LABEL_RMB = Text.literal("RMB").formatted(Formatting.BOLD);
+    private static final Text LABEL_SPACE = Text.literal("—").formatted(Formatting.BOLD);
+
+    private int lastLmbCps = Integer.MIN_VALUE;
+    private int lastRmbCps = Integer.MIN_VALUE;
+    private Text cachedLmbSub = Text.literal("0 CPS").formatted(Formatting.GRAY);
+    private Text cachedRmbSub = Text.literal("0 CPS").formatted(Formatting.GRAY);
+
     private float wAnim = 0f;
     private float aAnim = 0f;
     private float sAnim = 0f;
@@ -54,31 +67,40 @@ public class KeystrokesHudElement extends HudElement {
 
         int lmbCps = CPSCounter.getLeftCps();
         int rmbCps = CPSCounter.getRightCps();
+        if (lmbCps != lastLmbCps) {
+            lastLmbCps = lmbCps;
+            cachedLmbSub = Text.literal(lmbCps + " CPS").formatted(Formatting.GRAY);
+        }
+        if (rmbCps != lastRmbCps) {
+            lastRmbCps = rmbCps;
+            cachedRmbSub = Text.literal(rmbCps + " CPS").formatted(Formatting.GRAY);
+        }
+
+        VisualConfig cfg = VisualConfig.getInstance();
 
         // Отрисовка СТРОГО от (0, 0)
         // Ряд 1: [   ] [ W ] [   ]
-        drawKey(context, client, KEY_SIZE + GAP, 0, KEY_SIZE, KEY_SIZE, "W", null, wAnim);
+        drawKey(context, client, cfg, KEY_SIZE + GAP, 0, KEY_SIZE, KEY_SIZE, LABEL_W, null, wAnim);
 
         // Ряд 2: [ A ] [ S ] [ D ]
         int r2Y = KEY_SIZE + GAP; // 25
-        drawKey(context, client, 0, r2Y, KEY_SIZE, KEY_SIZE, "A", null, aAnim);
-        drawKey(context, client, KEY_SIZE + GAP, r2Y, KEY_SIZE, KEY_SIZE, "S", null, sAnim);
-        drawKey(context, client, (KEY_SIZE + GAP) * 2, r2Y, KEY_SIZE, KEY_SIZE, "D", null, dAnim);
+        drawKey(context, client, cfg, 0, r2Y, KEY_SIZE, KEY_SIZE, LABEL_A, null, aAnim);
+        drawKey(context, client, cfg, KEY_SIZE + GAP, r2Y, KEY_SIZE, KEY_SIZE, LABEL_S, null, sAnim);
+        drawKey(context, client, cfg, (KEY_SIZE + GAP) * 2, r2Y, KEY_SIZE, KEY_SIZE, LABEL_D, null, dAnim);
 
         // Ряд 3: [ LMB + CPS ] [ RMB + CPS ]
         int r3Y = r2Y + KEY_SIZE + GAP; // 50
         int mouseW = (TOTAL_WIDTH - GAP) / 2; // 34
         int mouseW2 = TOTAL_WIDTH - GAP - mouseW; // 35
-        drawKey(context, client, 0, r3Y, mouseW, KEY_SIZE, "LMB", lmbCps + " CPS", lmbAnim);
-        drawKey(context, client, mouseW + GAP, r3Y, mouseW2, KEY_SIZE, "RMB", rmbCps + " CPS", rmbAnim);
+        drawKey(context, client, cfg, 0, r3Y, mouseW, KEY_SIZE, LABEL_LMB, cachedLmbSub, lmbAnim);
+        drawKey(context, client, cfg, mouseW + GAP, r3Y, mouseW2, KEY_SIZE, LABEL_RMB, cachedRmbSub, rmbAnim);
 
         // Ряд 4: [ _______ SPACE _______ ]
         int r4Y = r3Y + KEY_SIZE + GAP; // 75
-        drawKey(context, client, 0, r4Y, TOTAL_WIDTH, 11, "—", null, spaceAnim);
+        drawKey(context, client, cfg, 0, r4Y, TOTAL_WIDTH, 11, LABEL_SPACE, null, spaceAnim);
     }
 
-    private void drawKey(DrawContext context, MinecraftClient client, int x, int y, int w, int h, String label, String sub, float pressAnim) {
-        VisualConfig cfg = VisualConfig.getInstance();
+    private void drawKey(DrawContext context, MinecraftClient client, VisualConfig cfg, int x, int y, int w, int h, Text label, Text sub, float pressAnim) {
         int baseBg = cfg.themeBgColor;
         int activeBg = RenderUtils.lerpColor(baseBg, cfg.themePrimaryColor, pressAnim * 0.8f);
         int border = RenderUtils.lerpColor(cfg.themeOutlineColor, cfg.themePrimaryColor, pressAnim);
@@ -89,11 +111,11 @@ public class KeystrokesHudElement extends HudElement {
         int textCol = RenderUtils.lerpColor(cfg.themeTextColor, 0xFFFFFFFF, pressAnim);
 
         if (sub != null) {
-            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, Text.literal(label).formatted(Formatting.BOLD), x + w / 2, y + 2, textCol);
-            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, Text.literal(sub).formatted(Formatting.GRAY), x + w / 2, y + 11, cfg.themeSubtextColor);
+            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, label, x + w / 2, y + 2, textCol);
+            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, sub, x + w / 2, y + 11, cfg.themeSubtextColor);
         } else {
             int textY = y + (h - 8) / 2;
-            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, Text.literal(label).formatted(Formatting.BOLD), x + w / 2, textY, textCol);
+            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, label, x + w / 2, textY, textCol);
         }
     }
 

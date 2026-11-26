@@ -4,9 +4,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 import org.lwjgl.glfw.GLFW;
-import ru.eclipse.client.event.EventBus;
-import ru.eclipse.client.event.EventTarget;
-import ru.eclipse.client.event.impl.EventKey;
 import ru.eclipse.client.module.impl.*;
 import ru.example.donorprefix.ClientPrefixConfig;
 import ru.example.donorprefix.visual.VisualConfig;
@@ -23,6 +20,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class ModuleManager {
     private static final ModuleManager INSTANCE = new ModuleManager();
 
+    // Прямые ссылки для O(1) проверки в миксинах без поиска в Map
+    public static volatile AutoPrefixModule AUTO_PREFIX;
+    public static volatile HitMarkerModule HIT_MARKER;
+    public static volatile CustomCrosshairModule CUSTOM_CROSSHAIR;
+    public static volatile NoHurtCamModule NO_HURT_CAM;
+    public static volatile ViewModelModule VIEW_MODEL;
+    public static volatile FullbrightModule FULLBRIGHT;
+    public static volatile NoFogModule NO_FOG;
+    public static volatile CameraClipModule CAMERA_CLIP;
+    public static volatile TimeChangerModule TIME_CHANGER;
+    public static volatile WeatherChangerModule WEATHER_CHANGER;
+    public static volatile TargetHUDModule TARGET_HUD;
+    public static volatile LowFireModule LOW_FIRE;
+    public static volatile NoOverlayModule NO_OVERLAY;
+
     private final List<Module> modules = new CopyOnWriteArrayList<>();
     private final Map<Class<? extends Module>, Module> moduleClassMap = new HashMap<>();
 
@@ -30,48 +42,46 @@ public final class ModuleManager {
         return INSTANCE;
     }
 
-    private ModuleManager() {
-        EventBus.register(this);
-    }
+    private ModuleManager() {}
 
     public void init() {
         modules.clear();
         moduleClassMap.clear();
 
         // 1. Префиксы
-        register(new AutoPrefixModule());
+        AUTO_PREFIX = register(new AutoPrefixModule());
 
         // 2. PvP & Бой
-        register(new HitMarkerModule());
-        register(new CustomCrosshairModule());
-        register(new NoHurtCamModule());
+        HIT_MARKER = register(new HitMarkerModule());
+        CUSTOM_CROSSHAIR = register(new CustomCrosshairModule());
+        NO_HURT_CAM = register(new NoHurtCamModule());
 
         // 3. Анимации
-        register(new ViewModelModule());
+        VIEW_MODEL = register(new ViewModelModule());
 
         // 4. Мир & Туман
-        register(new FullbrightModule());
-        register(new NoFogModule());
-        register(new CameraClipModule());
-        register(new TimeChangerModule());
-        register(new WeatherChangerModule());
+        FULLBRIGHT = register(new FullbrightModule());
+        NO_FOG = register(new NoFogModule());
+        CAMERA_CLIP = register(new CameraClipModule());
+        TIME_CHANGER = register(new TimeChangerModule());
+        WEATHER_CHANGER = register(new WeatherChangerModule());
 
         // 5. HUD & Оверлеи
-        register(new TargetHUDModule());
-        register(new LowFireModule());
-        register(new NoOverlayModule());
+        TARGET_HUD = register(new TargetHUDModule());
+        LOW_FIRE = register(new LowFireModule());
+        NO_OVERLAY = register(new NoOverlayModule());
 
         loadConfig();
         syncModulesToConfigs();
     }
 
-    private void register(Module module) {
+    private <T extends Module> T register(T module) {
         modules.add(module);
         moduleClassMap.put(module.getClass(), module);
         if (module.isEnabled()) {
-            EventBus.register(module);
             module.onEnable();
         }
+        return module;
     }
 
     @SuppressWarnings("unchecked")
@@ -100,17 +110,18 @@ public final class ModuleManager {
         return list;
     }
 
-    @EventTarget
-    public void onKey(EventKey event) {
-        if (event.getAction() != GLFW.GLFW_PRESS) return;
-        int key = event.getKey();
-        if (key <= 0) return;
+    public void onKeyPress(int key, int action) {
+        if (action != GLFW.GLFW_PRESS || key <= 0) return;
 
+        boolean toggled = false;
         for (Module m : modules) {
             if (m.getKeybind() == key) {
                 m.toggle();
-                saveConfig();
+                toggled = true;
             }
+        }
+        if (toggled) {
+            saveConfig();
         }
     }
 
@@ -283,7 +294,7 @@ public final class ModuleManager {
     public void saveConfig() {
         try {
             syncModulesToConfigs();
-            ru.eclipse.client.core.EclipseStateSync.getInstance().saveState();
+            ru.eclipse.client.core.EclipseStateSync.getInstance().saveStateDebounced();
         } catch (Throwable t) {
             t.printStackTrace();
         }

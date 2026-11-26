@@ -14,6 +14,17 @@ import org.joml.Matrix3x2fStack;
  */
 public class RenderUtils {
 
+    private static final String[] ASCII_CHAR_CACHE = new String[128];
+    static {
+        for (int i = 0; i < ASCII_CHAR_CACHE.length; i++) {
+            ASCII_CHAR_CACHE[i] = String.valueOf((char) i);
+        }
+    }
+
+    private static String charToString(char c) {
+        return c < 128 ? ASCII_CHAR_CACHE[c] : String.valueOf(c);
+    }
+
     public static void push(DrawContext context) {
         if (context == null) return;
         Matrix3x2fStack matrices = context.getMatrices();
@@ -101,7 +112,7 @@ public class RenderUtils {
         long time = System.currentTimeMillis();
         for (int i = 0; i < fullText.length(); i++) {
             char c = fullText.charAt(i);
-            String charStr = String.valueOf(c);
+            String charStr = charToString(c);
 
             // Плавная интерполяция между золотым (#F5A65B) и фиолетовым (#6A67CE) на основе позиции и времени
             float factor = animated

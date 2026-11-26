@@ -5,9 +5,6 @@ import net.minecraft.client.MinecraftClient;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.eclipse.client.event.EventBus;
-import ru.eclipse.client.event.EventTarget;
-import ru.eclipse.client.event.impl.EventKey;
 import ru.eclipse.client.module.ModuleManager;
 import ru.eclipse.client.ui.clickgui.EclipseClickGui;
 import ru.example.donorprefix.ClientPrefixConfig;
@@ -50,18 +47,19 @@ public final class EclipseClient implements ClientModInitializer {
         DonorPrefixClientMod.initFromCore();
         UpdateChecker.registerChatNotifier();
         UpdateChecker.checkAsync();
-        EventBus.register(this);
 
         LOGGER.info("{} успешно инициализирован под Minecraft 1.21.11!", CLIENT_NAME);
     }
 
-    @EventTarget
-    public void onKey(EventKey event) {
-        if (event.getAction() == GLFW.GLFW_PRESS && event.getKey() == GLFW.GLFW_KEY_RIGHT_SHIFT) {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc != null && mc.currentScreen == null) {
-                mc.setScreen(new EclipseClickGui());
+    public static void onKey(int key, int action) {
+        if (action == GLFW.GLFW_PRESS) {
+            if (key == GLFW.GLFW_KEY_RIGHT_SHIFT) {
+                MinecraftClient mc = MinecraftClient.getInstance();
+                if (mc != null && mc.currentScreen == null) {
+                    mc.setScreen(new EclipseClickGui());
+                }
             }
+            ModuleManager.getInstance().onKeyPress(key, action);
         }
     }
 }

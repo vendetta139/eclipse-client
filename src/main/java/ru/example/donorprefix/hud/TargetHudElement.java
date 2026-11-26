@@ -24,6 +24,15 @@ public class TargetHudElement extends HudElement {
     private long lastAnimTime = 0;
     private LivingEntity lastTarget = null;
 
+    private LivingEntity cachedNameEntity = null;
+    private String cachedTargetName = "Цель (Превью)";
+    private int lastDistTenths = Integer.MIN_VALUE;
+    private String cachedDistStr = "4.2m";
+    private int cachedDistW = -1;
+    private int lastCurHpInt = Integer.MIN_VALUE;
+    private int lastMaxHpInt = Integer.MIN_VALUE;
+    private String cachedHpStr = "18/20";
+
     public TargetHudElement() {
         super("targethud", "Target HUD", HUD_WIDTH, HUD_HEIGHT);
     }
@@ -56,10 +65,31 @@ public class TargetHudElement extends HudElement {
         LivingEntity displayEntity = target != null ? target : (isEditor ? null : lastTarget);
         boolean isPreview = (displayEntity == null);
 
-        String targetName = isPreview ? "Цель (Превью)" : displayEntity.getName().getString();
+        if (isPreview) {
+            cachedNameEntity = null;
+            cachedTargetName = "Цель (Превью)";
+        } else if (cachedNameEntity != displayEntity) {
+            cachedNameEntity = displayEntity;
+            cachedTargetName = displayEntity.getName().getString();
+        }
         float curHp = isPreview ? 18.0f : displayEntity.getHealth();
         float maxHp = isPreview ? 20.0f : Math.max(1.0f, displayEntity.getMaxHealth());
         float dist = isPreview ? 4.2f : (client.player != null && displayEntity != null ? client.player.distanceTo(displayEntity) : 0f);
+
+        int distTenths = Math.max(0, Math.round(dist * 10.0f));
+        if (distTenths != lastDistTenths || cachedDistW < 0) {
+            lastDistTenths = distTenths;
+            cachedDistStr = (distTenths / 10) + "." + (distTenths % 10) + "m";
+            cachedDistW = client.textRenderer.getWidth(cachedDistStr);
+        }
+
+        int curHpInt = Math.round(curHp);
+        int maxHpInt = Math.round(maxHp);
+        if (curHpInt != lastCurHpInt || maxHpInt != lastMaxHpInt) {
+            lastCurHpInt = curHpInt;
+            lastMaxHpInt = maxHpInt;
+            cachedHpStr = curHpInt + "/" + maxHpInt;
+        }
 
         animHp += (curHp - animHp) * 0.25f;
 
@@ -96,7 +126,7 @@ public class TargetHudElement extends HudElement {
 
             if (displayEntity != null && cfg.targetHud3DModel) {
                 try {
-                    float rotAngle = (float) ((System.currentTimeMillis() % 4500L) / 4500.0 * Math.PI * 2);
+                    float rotAngle = (float) ((now % 4500L) / 4500.0 * Math.PI * 2);
                     float lookX = (avatarX + avatarSize / 2f) + (float) Math.sin(rotAngle) * 35f;
                     float lookY = (avatarY + avatarSize / 2f) - 8f;
                     InventoryScreen.drawEntity(
@@ -109,10 +139,8 @@ public class TargetHudElement extends HudElement {
             }
 
             // 3. Тексты
-            RenderUtils.drawTextWithShadow(context, client.textRenderer, targetName, 42, 9, textCol);
-            String distStr = String.format("%.1fm", dist);
-            int distW = client.textRenderer.getWidth(distStr);
-            RenderUtils.drawTextWithShadow(context, client.textRenderer, distStr, this.width - distW - 7, 9, subtextCol);
+            RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedTargetName, 42, 9, textCol);
+            RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedDistStr, this.width - cachedDistW - 7, 9, subtextCol);
 
             // 4. Полоса здоровья
             int barX = 42;
@@ -128,8 +156,7 @@ public class TargetHudElement extends HudElement {
                 RenderUtils.drawRoundedRect(context, barX, barY, fillW, barH, 3, RenderUtils.multiplyAlpha(hpColor, animAlpha));
             }
 
-            String hpText = String.format("%.0f/%.0f", curHp, maxHp);
-            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, hpText, barX + barW / 2, barY - 1, RenderUtils.multiplyAlpha(0xFFFFFFFF, animAlpha));
+            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, cachedHpStr, barX + barW / 2, barY - 1, RenderUtils.multiplyAlpha(0xFFFFFFFF, animAlpha));
         } finally {
             if (matrices != null) {
                 matrices.popMatrix();

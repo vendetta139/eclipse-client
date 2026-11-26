@@ -6,7 +6,6 @@
   "client": [
     "CameraMixin",
     "ClientBrandRetrieverMixin",
-    "ClientConnectionMixin",
     "ClientPlayerInteractionManagerMixin",
     "EntryListWidgetMixin",
     "FogRendererMixin",

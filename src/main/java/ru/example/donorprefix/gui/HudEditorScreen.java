@@ -36,6 +36,11 @@ public class HudEditorScreen extends Screen {
 
     private int keyUpHeldFrames = 0;
     private int keyDownHeldFrames = 0;
+    private boolean scaleDirty = false;
+
+    private HudElement cachedToolbarElement = null;
+    private float cachedToolbarScale = Float.NaN;
+    private String cachedToolbarLabel = "Не выбран: -";
 
     public HudEditorScreen(Screen parent) {
         super(Text.literal("Редактор HUD"));
@@ -128,13 +133,13 @@ public class HudEditorScreen extends Screen {
             }
         }
 
-        // 4. Обработка клавиш клавиатуры для масштабирования (UP/DOWN, =/-, numpad +/-)
+        // 4. Обработка клавиш клавиатуры для масштабирования (UP/DOWN, =/-, numpad +/-) без спама записью на диск
         if (keyUp) {
             keyUpHeldFrames++;
             if (keyUpHeldFrames == 1 || (keyUpHeldFrames > 18 && keyUpHeldFrames % 4 == 0)) {
                 if (targetScaleElement != null) {
                     targetScaleElement.scale = MathHelper.clamp(targetScaleElement.scale + 0.05f, 0.4f, 2.5f);
-                    HudManager.getInstance().saveConfigs();
+                    scaleDirty = true;
                 }
             }
         } else {
@@ -146,11 +151,16 @@ public class HudEditorScreen extends Screen {
             if (keyDownHeldFrames == 1 || (keyDownHeldFrames > 18 && keyDownHeldFrames % 4 == 0)) {
                 if (targetScaleElement != null) {
                     targetScaleElement.scale = MathHelper.clamp(targetScaleElement.scale - 0.05f, 0.4f, 2.5f);
-                    HudManager.getInstance().saveConfigs();
+                    scaleDirty = true;
                 }
             }
         } else {
             keyDownHeldFrames = 0;
+        }
+
+        if (!keyUp && !keyDown && scaleDirty) {
+            scaleDirty = false;
+            HudManager.getInstance().saveConfigs();
         }
 
         // 5. Обработка перетаскивания элементов мышью (GLFW Drag & Drop)
@@ -239,13 +249,24 @@ public class HudEditorScreen extends Screen {
         context.fill(toolbarX, toolbarY, toolbarX + toolbarW, toolbarY + toolbarH, 0xD50E0E18);
         RenderUtils.drawBorder(context, toolbarX, toolbarY, toolbarW, toolbarH, 0x50F5A65B);
 
-        String targetName = (targetScaleElement != null) ? targetScaleElement.name : "Не выбран";
-        String scaleStr = (targetScaleElement != null) ? String.format("%.2fx", targetScaleElement.scale) : "-";
-        String labelText = targetName + ": " + scaleStr;
-        if (this.textRenderer.getWidth(labelText) > 102) {
-            labelText = targetName.substring(0, Math.min(targetName.length(), 6)) + "..: " + scaleStr;
+        float curScale = (targetScaleElement != null) ? targetScaleElement.scale : Float.NaN;
+        if (cachedToolbarElement != targetScaleElement || Float.compare(cachedToolbarScale, curScale) != 0) {
+            cachedToolbarElement = targetScaleElement;
+            cachedToolbarScale = curScale;
+            if (targetScaleElement == null) {
+                cachedToolbarLabel = "Не выбран: -";
+            } else {
+                int pct = Math.round(curScale * 100.0f);
+                String scaleStr = (pct / 100) + "." + ((pct % 100) < 10 ? "0" : "") + (pct % 100) + "x";
+                String targetName = targetScaleElement.name;
+                String candidate = targetName + ": " + scaleStr;
+                if (this.textRenderer.getWidth(candidate) > 102) {
+                    candidate = targetName.substring(0, Math.min(targetName.length(), 6)) + "..: " + scaleStr;
+                }
+                cachedToolbarLabel = candidate;
+            }
         }
-        context.drawTextWithShadow(this.textRenderer, labelText, toolbarX + 6, toolbarY + 5, 0xFFEAECEF);
+        context.drawTextWithShadow(this.textRenderer, cachedToolbarLabel, toolbarX + 6, toolbarY + 5, 0xFFEAECEF);
 
         // Кнопка [-]
         int bgMinus = hoverMinus ? 0xFF4A4B65 : 0xFF232435;
@@ -279,7 +300,9 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public void close() {
+        scaleDirty = false;
         HudManager.getInstance().saveConfigs();
+        ru.eclipse.client.core.EclipseStateSync.getInstance().flushPendingSave();
         if (this.client != null) {
             this.client.setScreen(this.parent);
         }

@@ -29,6 +29,11 @@ import java.util.Map;
  */
 public class EclipseClickGui extends Screen {
 
+    private static final Text HEADER_TITLE = Text.literal("§lECLIPSE§r §7CLIENT");
+    private static final Text HEADER_SUBTITLE = Text.literal("§8| 1.21.11 by alone.vendetta");
+    private static final Text HUD_BTN_TEXT = Text.literal("❖ HUD РЕДАКТОР");
+    private static final Text PFX_BTN_TEXT = Text.literal("✦ ПРЕФИКСЫ");
+
     private int guiX = 100;
     private int guiY = 60;
     private int guiW = 560;
@@ -44,7 +49,11 @@ public class EclipseClickGui extends Screen {
     private Module listeningKeybindModule = null;
 
     private NumberSetting draggingSlider = null;
+    private boolean sliderDirty = false;
     private int sliderModuleY = 0;
+    private NumberSetting cachedSliderSetting = null;
+    private double cachedSliderValue = Double.NaN;
+    private Text cachedSliderText = Text.empty();
 
     private float openProgress = 0.0f;
     private long lastRenderTime = 0;
@@ -102,6 +111,10 @@ public class EclipseClickGui extends Screen {
         if (!mouseDown) {
             draggingWindow = false;
             draggingSlider = null;
+            if (sliderDirty) {
+                sliderDirty = false;
+                ModuleManager.getInstance().saveConfig();
+            }
             return;
         }
 
@@ -129,8 +142,8 @@ public class EclipseClickGui extends Screen {
 
         // Иконка и логотип ECLIPSE
         EclipseTheme.drawEclipseBadge(context, guiX + 12, guiY + 11, 16, alpha);
-        RenderUtils.drawTextWithShadow(context, tr, Text.literal("§lECLIPSE§r §7CLIENT"), guiX + 34, guiY + 15, 0xFFFFFFFF);
-        RenderUtils.drawTextWithShadow(context, tr, Text.literal("§8| 1.21.11 by alone.vendetta"), guiX + 126, guiY + 15, 0xFF7D8296);
+        RenderUtils.drawTextWithShadow(context, tr, HEADER_TITLE, guiX + 34, guiY + 15, 0xFFFFFFFF);
+        RenderUtils.drawTextWithShadow(context, tr, HEADER_SUBTITLE, guiX + 126, guiY + 15, 0xFF7D8296);
 
         // Кнопка HUD редактора
         int hudBtnW = 86;
@@ -142,7 +155,7 @@ public class EclipseClickGui extends Screen {
         int hudText = hoverHud ? 0xFF0B0B10 : 0xFFF5A65B;
         RenderUtils.drawRoundedRect(context, hudBtnX, hudBtnY, hudBtnW, hudBtnH, 4, hudBg);
         RenderUtils.drawRoundedOutline(context, hudBtnX, hudBtnY, hudBtnW, hudBtnH, 4, 0x88F5A65B);
-        RenderUtils.drawCenteredTextWithShadow(context, tr, Text.literal("❖ HUD РЕДАКТОР"), hudBtnX + hudBtnW / 2, hudBtnY + 6, hudText);
+        RenderUtils.drawCenteredTextWithShadow(context, tr, HUD_BTN_TEXT, hudBtnX + hudBtnW / 2, hudBtnY + 6, hudText);
 
         // Кнопка меню префиксов
         int pfxBtnW = 76;
@@ -152,7 +165,7 @@ public class EclipseClickGui extends Screen {
         int pfxText = hoverPfx ? 0xFFFFFFFF : 0xFFD946EF;
         RenderUtils.drawRoundedRect(context, pfxBtnX, hudBtnY, pfxBtnW, hudBtnH, 4, pfxBg);
         RenderUtils.drawRoundedOutline(context, pfxBtnX, hudBtnY, pfxBtnW, hudBtnH, 4, 0x886D28D9);
-        RenderUtils.drawCenteredTextWithShadow(context, tr, Text.literal("✦ ПРЕФИКСЫ"), pfxBtnX + pfxBtnW / 2, hudBtnY + 6, pfxText);
+        RenderUtils.drawCenteredTextWithShadow(context, tr, PFX_BTN_TEXT, pfxBtnX + pfxBtnW / 2, hudBtnY + 6, pfxText);
 
         // ══════════════════════════════════════════════════════════════════════
         // ЛЕВАЯ ПАНЕЛЬ КАТЕГОРИЙ (Sidebar)
@@ -284,15 +297,17 @@ public class EclipseClickGui extends Screen {
             double pct = (ns.getValue() - ns.getMin()) / (ns.getMax() - ns.getMin());
             pct = Math.max(0.0, Math.min(1.0, pct));
 
-            // Проверка перетаскивания слайдера мышью
+            // Проверка перетаскивания слайдера мышью (без записи на диск на каждом пикселе)
             if (this.client != null && this.client.getWindow() != null) {
                 long handle = this.client.getWindow().getHandle();
                 boolean mouseDown = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
                 if (mouseDown && mouseX >= sliderX - 4 && mouseX <= sliderX + sliderW + 4 && mouseY >= y && mouseY <= y + 20) {
                     double newPct = (double) (mouseX - sliderX) / (double) sliderW;
                     double newVal = ns.getMin() + newPct * (ns.getMax() - ns.getMin());
-                    ns.setValue(newVal);
-                    ModuleManager.getInstance().saveConfig();
+                    if (Math.abs(newVal - ns.getValue()) > 1e-6) {
+                        ns.setValue(newVal);
+                        sliderDirty = true;
+                    }
                 }
             }
 
@@ -303,8 +318,17 @@ public class EclipseClickGui extends Screen {
             }
             RenderUtils.drawPill(context, sliderX + fillW - 4, sliderY - 2, 10, 10, 0xFFFFFFFF, 0xFFFFFFFF);
 
-            String valStr = String.format("%.2f%s", ns.getValue(), ns.getSuffix());
-            RenderUtils.drawTextWithShadow(context, tr, Text.literal(valStr), sliderX + sliderW + 6, y + 4, 0xFF8A8E9E);
+            double curVal = ns.getValue();
+            if (cachedSliderSetting != ns || Double.compare(cachedSliderValue, curVal) != 0) {
+                cachedSliderSetting = ns;
+                cachedSliderValue = curVal;
+                int scaled = (int) Math.round(curVal * 100.0);
+                int sign = scaled < 0 ? -1 : 1;
+                int abs = Math.abs(scaled);
+                cachedSliderText = Text.literal((sign < 0 ? "-" : "") + (abs / 100) + "."
+                        + ((abs % 100) < 10 ? "0" : "") + (abs % 100) + ns.getSuffix());
+            }
+            RenderUtils.drawTextWithShadow(context, tr, cachedSliderText, sliderX + sliderW + 6, y + 4, 0xFF8A8E9E);
         } else if (s instanceof ModeSetting ms) {
             RenderUtils.drawTextWithShadow(context, tr, Text.literal(ms.getName()), x, y + 4, 0xFFC0C4D4);
 
@@ -498,5 +522,15 @@ public class EclipseClickGui extends Screen {
         }
 
         return super.keyPressed(keyInput);
+    }
+
+    @Override
+    public void close() {
+        if (sliderDirty) {
+            sliderDirty = false;
+            ModuleManager.getInstance().syncModulesToConfigs();
+        }
+        ru.eclipse.client.core.EclipseStateSync.getInstance().flushPendingSave();
+        super.close();
     }
 }

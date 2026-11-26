@@ -17,16 +17,16 @@ public abstract class GameRendererMixin {
 
     @Inject(method = "tiltViewWhenHurt", at = @At("HEAD"), cancellable = true)
     private void onTiltViewWhenHurt(MatrixStack matrices, float tickDelta, CallbackInfo ci) {
-        NoHurtCamModule mod = ModuleManager.getInstance().getModule(NoHurtCamModule.class);
-        if (mod != null && mod.isEnabled()) {
-            ci.cancel();
-        }
+        NoHurtCamModule mod = ModuleManager.NO_HURT_CAM;
+        if (mod == null || !mod.isEnabled()) return;
+        ci.cancel();
     }
 
     @Inject(method = "getNightVisionStrength", at = @At("HEAD"), cancellable = true)
     private static void onGetNightVisionStrength(LivingEntity entity, float tickDelta, CallbackInfoReturnable<Float> cir) {
-        FullbrightModule mod = ModuleManager.getInstance().getModule(FullbrightModule.class);
-        if (mod != null && mod.isEnabled() && (mod.getMode().is("NightVision") || mod.getMode().is("Both"))) {
+        FullbrightModule mod = ModuleManager.FULLBRIGHT;
+        if (mod == null || !mod.isEnabled()) return;
+        if (mod.getMode().is("NightVision") || mod.getMode().is("Both")) {
             cir.setReturnValue(1.0f);
         }
     }

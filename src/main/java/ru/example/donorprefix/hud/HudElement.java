@@ -45,6 +45,10 @@ public abstract class HudElement {
 
     public abstract void resetDefaultPosition(int screenWidth, int screenHeight);
 
+    private float cachedLabelScale = Float.NaN;
+    private boolean cachedLabelEnabled = false;
+    private String cachedEditorLabel = "";
+
     /**
      * Единый финальный метод трансформации и отрисовки для игры и редактора.
      */
@@ -52,11 +56,17 @@ public abstract class HudElement {
         if (!this.enabled && !isEditor) return;
         if (this.scale < 0.25f || this.scale > 3.0f || Float.isNaN(this.scale)) this.scale = 1.0f;
 
-        Matrix3x2fStack matrices = context.getMatrices();
+        boolean needScale = Math.abs(this.scale - 1.0f) >= 0.0001f;
+        boolean needTranslate = this.x != 0.0f || this.y != 0.0f;
+        Matrix3x2fStack matrices = (needScale || needTranslate) ? context.getMatrices() : null;
         if (matrices != null) {
             matrices.pushMatrix();
-            matrices.translate(this.x, this.y);
-            matrices.scale(this.scale, this.scale);
+            if (needTranslate) {
+                matrices.translate(this.x, this.y);
+            }
+            if (needScale) {
+                matrices.scale(this.scale, this.scale);
+            }
         }
 
         try {
@@ -67,7 +77,7 @@ public abstract class HudElement {
             if (isEditor) {
                 int borderColor = isSelected ? 0xFFF5A65B : (isHovered ? 0xFF6A67CE : (this.enabled ? 0x80383A52 : 0x80702020));
                 RenderUtils.drawBorder(context, 0, 0, this.width, this.height, borderColor);
-                String label = this.name + String.format(" [%.2fx]", this.scale) + (this.enabled ? "" : " (ВЫКЛ)");
+                String label = getEditorLabel();
                 MinecraftClient mc = MinecraftClient.getInstance();
                 if (mc != null && mc.textRenderer != null) {
                     context.drawTextWithShadow(mc.textRenderer, label, 0, -11, this.enabled ? 0xFFEAECEF : 0xFFAAAAAA);
@@ -78,6 +88,23 @@ public abstract class HudElement {
                 matrices.popMatrix();
             }
         }
+    }
+
+    private String getEditorLabel() {
+        if (cachedLabelScale != this.scale || cachedLabelEnabled != this.enabled) {
+            cachedLabelScale = this.scale;
+            cachedLabelEnabled = this.enabled;
+            int scaledPct = Math.round(this.scale * 100.0f);
+            int whole = scaledPct / 100;
+            int frac = scaledPct % 100;
+            StringBuilder sb = new StringBuilder(this.name.length() + 18);
+            sb.append(this.name).append(" [").append(whole).append('.');
+            if (frac < 10) sb.append('0');
+            sb.append(frac).append("x]");
+            if (!this.enabled) sb.append(" (ВЫКЛ)");
+            cachedEditorLabel = sb.toString();
+        }
+        return cachedEditorLabel;
     }
 
     /**

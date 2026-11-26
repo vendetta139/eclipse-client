@@ -11,6 +11,10 @@ import ru.example.donorprefix.visual.VisualConfig;
  */
 public class FpsHudElement extends HudElement {
 
+    private int lastFps = Integer.MIN_VALUE;
+    private String cachedText = "0 FPS";
+    private int cachedWidth = 60;
+
     public FpsHudElement() {
         super("fps", "FPS", 60, 16);
     }
@@ -21,14 +25,17 @@ public class FpsHudElement extends HudElement {
         VisualConfig cfg = VisualConfig.getInstance();
 
         int fps = client.getCurrentFps();
-        String text = fps + " FPS";
-        int textW = client.textRenderer.getWidth(text);
-        this.width = textW + 16;
+        if (fps != lastFps) {
+            lastFps = fps;
+            cachedText = fps + " FPS";
+            cachedWidth = client.textRenderer.getWidth(cachedText) + 16;
+        }
+        this.width = cachedWidth;
         this.height = 16;
 
         // Отрисовка СТРОГО от (0, 0)
         RenderUtils.drawPill(context, 0, 0, this.width, this.height, cfg.themeBgColor, cfg.themeOutlineColor);
-        RenderUtils.drawTextWithShadow(context, client.textRenderer, text, 8, 4, cfg.themeTextColor);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedText, 8, 4, cfg.themeTextColor);
     }
 
     @Override

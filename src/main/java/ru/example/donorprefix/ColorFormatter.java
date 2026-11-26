@@ -43,74 +43,61 @@ public class ColorFormatter {
                         && isDelimiter(text.charAt(i + 10)) && isHexChar(text.charAt(i + 11))
                         && isDelimiter(text.charAt(i + 12)) && isHexChar(text.charAt(i + 13))) {
 
-                    String hex = "" + text.charAt(i + 3) + text.charAt(i + 5)
-                            + text.charAt(i + 7) + text.charAt(i + 9)
-                            + text.charAt(i + 11) + text.charAt(i + 13);
                     if (currentSegment.length() > 0) {
                         root.append(Text.literal(currentSegment.toString()).setStyle(currentStyle));
                         currentSegment.setLength(0);
                     }
-                    try {
-                        int rgb = Integer.parseInt(hex, 16);
-                        currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
-                        i += 14;
-                        continue;
-                    } catch (NumberFormatException ignored) {
-                    }
+                    int rgb = (hexVal(text.charAt(i + 3)) << 20)
+                            | (hexVal(text.charAt(i + 5)) << 16)
+                            | (hexVal(text.charAt(i + 7)) << 12)
+                            | (hexVal(text.charAt(i + 9)) << 8)
+                            | (hexVal(text.charAt(i + 11)) << 4)
+                            | hexVal(text.charAt(i + 13));
+                    currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
+                    i += 14;
+                    continue;
                 }
             }
 
             // 2. Проверка на hex-код &#RRGGBB или §#RRGGBB (8 символов)
             if ((c == '&' || c == '§') && i + 7 < length && text.charAt(i + 1) == '#') {
-                String hex = text.substring(i + 2, i + 8);
-                if (isHex6(hex)) {
+                int rgb = parseHex6(text, i + 2);
+                if (rgb >= 0) {
                     if (currentSegment.length() > 0) {
                         root.append(Text.literal(currentSegment.toString()).setStyle(currentStyle));
                         currentSegment.setLength(0);
                     }
-                    try {
-                        int rgb = Integer.parseInt(hex, 16);
-                        currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
-                        i += 8;
-                        continue;
-                    } catch (NumberFormatException ignored) {
-                    }
+                    currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
+                    i += 8;
+                    continue;
                 }
             }
 
             // 3. Проверка на компактный hex &xRRGGBB или §xRRGGBB (8 символов)
             if ((c == '&' || c == '§') && i + 7 < length && (text.charAt(i + 1) == 'x' || text.charAt(i + 1) == 'X')) {
-                String hex = text.substring(i + 2, i + 8);
-                if (isHex6(hex)) {
+                int rgb = parseHex6(text, i + 2);
+                if (rgb >= 0) {
                     if (currentSegment.length() > 0) {
                         root.append(Text.literal(currentSegment.toString()).setStyle(currentStyle));
                         currentSegment.setLength(0);
                     }
-                    try {
-                        int rgb = Integer.parseInt(hex, 16);
-                        currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
-                        i += 8;
-                        continue;
-                    } catch (NumberFormatException ignored) {
-                    }
+                    currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
+                    i += 8;
+                    continue;
                 }
             }
 
             // 4. Проверка на MiniMessage hex-код <#RRGGBB> (9 символов)
             if (c == '<' && i + 8 < length && text.charAt(i + 1) == '#' && text.charAt(i + 8) == '>') {
-                String hex = text.substring(i + 2, i + 8);
-                if (isHex6(hex)) {
+                int rgb = parseHex6(text, i + 2);
+                if (rgb >= 0) {
                     if (currentSegment.length() > 0) {
                         root.append(Text.literal(currentSegment.toString()).setStyle(currentStyle));
                         currentSegment.setLength(0);
                     }
-                    try {
-                        int rgb = Integer.parseInt(hex, 16);
-                        currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
-                        i += 9;
-                        continue;
-                    } catch (NumberFormatException ignored) {
-                    }
+                    currentStyle = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
+                    i += 9;
+                    continue;
                 }
             }
 
@@ -169,11 +156,19 @@ public class ColorFormatter {
         return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 
-    private static boolean isHex6(String s) {
-        if (s == null || s.length() != 6) return false;
+    private static int hexVal(char c) {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
+        return 10 + (c - 'A');
+    }
+
+    private static int parseHex6(String s, int start) {
+        int val = 0;
         for (int j = 0; j < 6; j++) {
-            if (!isHexChar(s.charAt(j))) return false;
+            char ch = s.charAt(start + j);
+            if (!isHexChar(ch)) return -1;
+            val = (val << 4) | hexVal(ch);
         }
-        return true;
+        return val;
     }
 }
