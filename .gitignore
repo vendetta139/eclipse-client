@@ -1,0 +1,37 @@
+# Gradle & Loom
+.gradle/
+build/
+out/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# Minecraft runtime & local configs
+/run/
+/logs/
+/crash-reports/
+/mods/
+/config/
+
+# Local extracted jars, mappings & temporary artifacts
+/libs/
+/mappings/
+/META-INF/
+/assets/
+/yarn_extracted/
+/scratch/
+/*.jar
+/*.zip
+/*.log
+/launch-1.21.11.bat
+
+# OS
+.DS_Store
+Thumbs.db

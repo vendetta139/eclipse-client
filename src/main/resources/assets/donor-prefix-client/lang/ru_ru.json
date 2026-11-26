@@ -1,0 +1,22 @@
+{
+  "key.categories.donor-prefix-client": "Eclipse Client",
+  "key.donor-prefix-client.open_menu": "Открыть меню Eclipse Client",
+  "donor_prefix.menu.title": "ECLIPSE CLIENT",
+  "donor_prefix.menu.subtitle": "Премиальный комплекс префиксов и визуалов",
+  "donor_prefix.status.active": "АКТИВЕН",
+  "donor_prefix.status.paused": "НА ПАУЗЕ",
+  "donor_prefix.status.next_in": "Смена через: %dс",
+  "donor_prefix.button.add": "+ Добавить префикс",
+  "donor_prefix.button.save": "Сохранить",
+  "donor_prefix.button.close": "Закрыть",
+  "donor_prefix.button.test": "Применить сейчас (тест)",
+  "donor_prefix.button.up": "Выше",
+  "donor_prefix.button.down": "Ниже",
+  "donor_prefix.button.delete": "Удалить",
+  "donor_prefix.cooldown.label": "Кулдаун:",
+  "donor_prefix.template.label": "Команда:",
+  "donor_prefix.preview.label": "Превью:",
+  "donor_prefix.preview.empty": "— пусто —",
+  "donor_prefix.saved.notice": "Настройки успешно сохранены!"
+}
+

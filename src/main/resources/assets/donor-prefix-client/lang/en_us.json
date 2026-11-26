@@ -1,0 +1,22 @@
+{
+  "key.categories.donor-prefix-client": "Eclipse Client",
+  "key.donor-prefix-client.open_menu": "Open Eclipse Client Menu",
+  "donor_prefix.menu.title": "ECLIPSE CLIENT",
+  "donor_prefix.menu.subtitle": "Next-Gen Utility & Prefix Suite",
+  "donor_prefix.status.active": "ACTIVE",
+  "donor_prefix.status.paused": "PAUSED",
+  "donor_prefix.status.next_in": "Next in: %ds",
+  "donor_prefix.button.add": "+ Add prefix",
+  "donor_prefix.button.save": "Save",
+  "donor_prefix.button.close": "Close",
+  "donor_prefix.button.test": "Apply now (test)",
+  "donor_prefix.button.up": "Up",
+  "donor_prefix.button.down": "Down",
+  "donor_prefix.button.delete": "Delete",
+  "donor_prefix.cooldown.label": "Cooldown:",
+  "donor_prefix.template.label": "Command:",
+  "donor_prefix.preview.label": "Preview:",
+  "donor_prefix.preview.empty": "— empty —",
+  "donor_prefix.saved.notice": "Settings saved successfully!"
+}
+

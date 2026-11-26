@@ -1,0 +1,32 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.eclipse.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "CameraMixin",
+    "ClientBrandRetrieverMixin",
+    "ClientConnectionMixin",
+    "ClientPlayerInteractionManagerMixin",
+    "EntryListWidgetMixin",
+    "FogRendererMixin",
+    "GameRendererMixin",
+    "HeldItemRendererMixin",
+    "InGameHudMixin",
+    "InGameOverlayRendererMixin",
+    "KeyboardMixin",
+    "LightmapTextureManagerMixin",
+    "MinecraftClientMixin",
+    "MouseMixin",
+    "PressableWidgetMixin",
+    "RotatingCubeMapRendererMixin",
+    "ScreenMixin",
+    "SliderWidgetMixin",
+    "SplashOverlayMixin",
+    "TitleScreenMixin",
+    "WorldMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

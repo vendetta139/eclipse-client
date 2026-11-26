@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "eclipse-client",
+  "version": "${version}",
+  "name": "ECLIPSE CLIENT",
+  "description": "ECLIPSE CLIENT 1.21.11 | by alone.vendetta",
+  "authors": [
+    "alone.vendetta"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "accessWidener": "eclipse.accesswidener",
+  "entrypoints": {
+    "client": [
+      "ru.eclipse.client.core.EclipseClient"
+    ]
+  },
+  "mixins": [
+    "eclipse.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "1.21.11",
+    "java": ">=21"
+  }
+}
