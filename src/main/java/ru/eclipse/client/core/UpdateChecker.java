@@ -25,6 +25,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Асинхронная проверка обновлений ECLIPSE CLIENT через GitHub Raw JSON.
@@ -33,14 +37,30 @@ public final class UpdateChecker {
 
     public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/vendetta139/eclipse-client/main/version.json";
 
+    private static final long PERIODIC_CHECK_MINUTES = 3L;
+    private static final long JOIN_COOLDOWN_MS = 30_000L;
+
     private static final int COLOR_GOLD = 0xF5A65B;
     private static final int COLOR_INDIGO = 0x6A67CE;
     private static final int COLOR_TEXT = 0xEAECEF;
     private static final int COLOR_MUTED = 0x8A8A93;
 
+    private static final AtomicBoolean CHECK_IN_FLIGHT = new AtomicBoolean(false);
+    private static final AtomicBoolean SCHEDULER_STARTED = new AtomicBoolean(false);
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
+    private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "Eclipse-UpdateChecker");
+        t.setDaemon(true);
+        return t;
+    });
+
     private static volatile UpdateInfo pendingUpdate = null;
-    private static volatile boolean notifiedThisSession = false;
+    private static volatile String lastNotifiedVersion = null;
     private static volatile boolean joinHookRegistered = false;
+    private static volatile long lastCheckEpochMs = 0L;
 
     public record UpdateInfo(String currentVersion, String latestVersion, String downloadUrl, List<String> changelog) {}
 
@@ -58,24 +78,24 @@ public final class UpdateChecker {
         joinHookRegistered = true;
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            UpdateInfo info = pendingUpdate;
-            if (info == null || notifiedThisSession) {
-                return;
+            notifyInGameIfPending(client);
+            if (System.currentTimeMillis() - lastCheckEpochMs >= JOIN_COOLDOWN_MS) {
+                checkAsync();
             }
-            notifiedThisSession = true;
-            client.execute(() -> {
-                if (client.player != null) {
-                    client.player.sendMessage(buildChatMessage(info), false);
-                }
-            });
         });
     }
 
     public static void checkAsync() {
+        startPeriodicChecksIfNeeded();
+
         VisualConfig cfg = VisualConfig.getInstance();
         if (cfg != null && !cfg.checkUpdates) {
             return;
         }
+        if (!CHECK_IN_FLIGHT.compareAndSet(false, true)) {
+            return;
+        }
+        lastCheckEpochMs = System.currentTimeMillis();
 
         String currentVersion = getCurrentModVersion();
 
@@ -85,54 +105,77 @@ public final class UpdateChecker {
             CompletableFuture.runAsync(() -> {
                 try {
                     String json = Files.readString(Path.of(testFileProp), StandardCharsets.UTF_8);
-                    UpdateInfo info = parseManifestIfNewer(json, currentVersion);
-                    if (info != null) {
-                        pendingUpdate = info;
-                        EclipseClient.LOGGER.info("Найдено обновление (тест): v{} -> v{}", info.currentVersion(), info.latestVersion());
-                    }
-                } catch (Throwable ignored) {}
+                    handleManifestResponse(json, currentVersion);
+                } catch (Throwable ignored) {
+                } finally {
+                    CHECK_IN_FLIGHT.set(false);
+                }
             });
             return;
         }
 
         try {
             URI uri = URI.create(UPDATE_JSON_URL);
-            HttpClient httpClient = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(5))
-                    .followRedirects(HttpClient.Redirect.NORMAL)
-                    .build();
-
             HttpRequest request = HttpRequest.newBuilder(uri)
                     .timeout(Duration.ofSeconds(5))
                     .header("Accept", "application/json")
+                    .header("Cache-Control", "no-cache")
                     .header("User-Agent", "EclipseClient/" + currentVersion)
                     .GET()
                     .build();
 
-            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-                    .thenAccept(response -> {
-                        if (response != null && response.statusCode() == 200 && response.body() != null) {
-                            UpdateInfo info = parseManifestIfNewer(response.body(), currentVersion);
-                            if (info != null) {
-                                pendingUpdate = info;
-                                EclipseClient.LOGGER.info("Доступно обновление ECLIPSE CLIENT: v{} -> v{}",
-                                        info.currentVersion(), info.latestVersion());
-                                MinecraftClient mc = MinecraftClient.getInstance();
-                                if (mc != null && !notifiedThisSession) {
-                                    mc.execute(() -> {
-                                        if (mc.player != null && !notifiedThisSession) {
-                                            notifiedThisSession = true;
-                                            mc.player.sendMessage(buildChatMessage(info), false);
-                                        }
-                                    });
-                                }
+            HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
+                    .whenComplete((response, ex) -> {
+                        try {
+                            if (ex == null && response != null && response.statusCode() == 200 && response.body() != null) {
+                                handleManifestResponse(response.body(), currentVersion);
                             }
+                        } finally {
+                            CHECK_IN_FLIGHT.set(false);
                         }
-                    })
-                    .exceptionally(ex -> null);
+                    });
         } catch (Throwable ignored) {
+            CHECK_IN_FLIGHT.set(false);
             // Молча игнорируем ошибки сети/URL без спама стектрейсом
         }
+    }
+
+    private static void startPeriodicChecksIfNeeded() {
+        if (SCHEDULER_STARTED.compareAndSet(false, true)) {
+            SCHEDULER.scheduleAtFixedRate(
+                    UpdateChecker::checkAsync,
+                    PERIODIC_CHECK_MINUTES,
+                    PERIODIC_CHECK_MINUTES,
+                    TimeUnit.MINUTES
+            );
+        }
+    }
+
+    private static void handleManifestResponse(String body, String currentVersion) {
+        UpdateInfo info = parseManifestIfNewer(body, currentVersion);
+        if (info == null) {
+            return;
+        }
+        pendingUpdate = info;
+        if (!info.latestVersion().equals(lastNotifiedVersion)) {
+            EclipseClient.LOGGER.info("Доступно обновление ECLIPSE CLIENT: v{} -> v{}",
+                    info.currentVersion(), info.latestVersion());
+        }
+        notifyInGameIfPending(MinecraftClient.getInstance());
+    }
+
+    private static void notifyInGameIfPending(MinecraftClient client) {
+        UpdateInfo info = pendingUpdate;
+        if (client == null || info == null || info.latestVersion().equals(lastNotifiedVersion)) {
+            return;
+        }
+        client.execute(() -> {
+            UpdateInfo latest = pendingUpdate;
+            if (client.player != null && latest != null && !latest.latestVersion().equals(lastNotifiedVersion)) {
+                lastNotifiedVersion = latest.latestVersion();
+                client.player.sendMessage(buildChatMessage(latest), false);
+            }
+        });
     }
 
     public static UpdateInfo parseManifestIfNewer(String jsonBody, String currentVersion) {
