@@ -23,6 +23,7 @@ public class VisualConfig {
 
     // --- 0. Общие настройки и цветовая тема UI ---
     public boolean checkUpdates = true;
+    public boolean betaChannel = false;
     public int themePreset = 0; // 0: Space Eclipse, 1: Evo Midnight, 2: Cyan, 3: Emerald, 4: Crimson
     public int themePrimaryColor = 0xFFF5A65B;
     public int themeSecondaryColor = 0xFF6A67CE;

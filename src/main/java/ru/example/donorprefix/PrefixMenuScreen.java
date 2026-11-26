@@ -854,8 +854,12 @@ public class PrefixMenuScreen extends Screen {
                 () -> false, r -> {});
 
         addSetting(ScreenTab.THEME, RowType.TOGGLE, "checkUpdates", "Проверка обновлений",
-                "Асинхронная проверка новых версий при запуске клиента",
+                "Асинхронная проверка новых версий на GitHub",
                 () -> visualConfig.checkUpdates, v -> visualConfig.checkUpdates = v);
+
+        addSetting(ScreenTab.THEME, RowType.TOGGLE, "betaChannel", "Бета-канал обновлений",
+                "Уведомлять о бета-сборках из блока beta в version.json",
+                () -> visualConfig.betaChannel, v -> visualConfig.betaChannel = v);
 
         repositionSettingRows();
     }

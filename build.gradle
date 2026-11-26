@@ -45,10 +45,15 @@ java {
 	}
 }
 
+def gameModsDir = file("C:/Users/alina/AppData/Roaming/.tlauncher/legacy/Minecraft/game/labymod-neo/fabric/1.21.11/mods")
+
 tasks.register('copyToGameMods', Copy) {
 	dependsOn 'remapJar'
+	doFirst {
+		delete fileTree(dir: gameModsDir, include: "eclipse-client-*.jar")
+	}
 	from tasks.named('remapJar')
-	into "C:/Users/alina/AppData/Roaming/.tlauncher/legacy/Minecraft/game/labymod-neo/fabric/1.21.11/mods"
+	into gameModsDir
 }
 
 tasks.named('build') {

@@ -179,42 +179,78 @@ public final class UpdateChecker {
     }
 
     public static UpdateInfo parseManifestIfNewer(String jsonBody, String currentVersion) {
+        VisualConfig cfg = VisualConfig.getInstance();
+        boolean betaChannelEnabled = cfg != null && cfg.betaChannel;
+        return parseManifestIfNewer(jsonBody, currentVersion, betaChannelEnabled);
+    }
+
+    public static UpdateInfo parseManifestIfNewer(String jsonBody, String currentVersion, boolean betaChannelEnabled) {
         if (jsonBody == null || jsonBody.isBlank()) return null;
         try {
             JsonElement parsed = JsonParser.parseString(jsonBody);
             if (parsed == null || !parsed.isJsonObject()) return null;
-            JsonObject obj = parsed.getAsJsonObject();
+            JsonObject root = parsed.getAsJsonObject();
 
-            if (!obj.has("version") || !obj.get("version").isJsonPrimitive()) {
-                return null;
-            }
-            String remoteVersion = obj.get("version").getAsString().trim();
-            if (remoteVersion.isEmpty() || !isNewerVersion(currentVersion, remoteVersion)) {
-                return null;
-            }
+            String rootUrl = getStringOrEmpty(root, "download_url");
+            List<String> rootChanges = readChangelog(root);
 
-            String downloadUrl = obj.has("download_url") && obj.get("download_url").isJsonPrimitive()
-                    ? obj.get("download_url").getAsString().trim()
-                    : "";
+            UpdateInfo stableCandidate = extractCandidate(root, currentVersion, rootUrl, rootChanges);
+            UpdateInfo best = stableCandidate;
 
-            List<String> changes = new ArrayList<>();
-            if (obj.has("changelog") && obj.get("changelog").isJsonArray()) {
-                JsonArray arr = obj.getAsJsonArray("changelog");
-                for (JsonElement el : arr) {
-                    if (el != null && el.isJsonPrimitive()) {
-                        String line = el.getAsString().trim();
-                        if (!line.isEmpty()) {
-                            changes.add(line);
-                            if (changes.size() >= 4) break;
-                        }
-                    }
+            if (betaChannelEnabled && root.has("beta") && root.get("beta").isJsonObject()) {
+                JsonObject betaObj = root.getAsJsonObject("beta");
+                UpdateInfo betaCandidate = extractCandidate(betaObj, currentVersion, rootUrl, rootChanges);
+                if (betaCandidate != null && (best == null || isNewerVersion(best.latestVersion(), betaCandidate.latestVersion()))) {
+                    best = betaCandidate;
                 }
             }
 
-            return new UpdateInfo(stripPrefix(currentVersion), stripPrefix(remoteVersion), downloadUrl, changes);
+            return best;
         } catch (Throwable ignored) {
             return null;
         }
+    }
+
+    private static UpdateInfo extractCandidate(JsonObject obj, String currentVersion, String fallbackUrl, List<String> fallbackChanges) {
+        if (obj == null || !obj.has("version") || !obj.get("version").isJsonPrimitive()) {
+            return null;
+        }
+        String remoteVersion = obj.get("version").getAsString().trim();
+        if (remoteVersion.isEmpty() || !isNewerVersion(currentVersion, remoteVersion)) {
+            return null;
+        }
+        String url = getStringOrEmpty(obj, "download_url");
+        if (url.isEmpty()) {
+            url = fallbackUrl;
+        }
+        List<String> changes = readChangelog(obj);
+        if (changes.isEmpty() && fallbackChanges != null) {
+            changes = fallbackChanges;
+        }
+        return new UpdateInfo(stripPrefix(currentVersion), stripPrefix(remoteVersion), url, changes);
+    }
+
+    private static String getStringOrEmpty(JsonObject obj, String key) {
+        return obj.has(key) && obj.get(key).isJsonPrimitive()
+                ? obj.get(key).getAsString().trim()
+                : "";
+    }
+
+    private static List<String> readChangelog(JsonObject obj) {
+        List<String> changes = new ArrayList<>();
+        if (obj.has("changelog") && obj.get("changelog").isJsonArray()) {
+            JsonArray arr = obj.getAsJsonArray("changelog");
+            for (JsonElement el : arr) {
+                if (el != null && el.isJsonPrimitive()) {
+                    String line = el.getAsString().trim();
+                    if (!line.isEmpty()) {
+                        changes.add(line);
+                        if (changes.size() >= 4) break;
+                    }
+                }
+            }
+        }
+        return changes;
     }
 
     /**
@@ -327,9 +363,43 @@ public final class UpdateChecker {
             boolean thisPre = this.preRelease != null && !this.preRelease.isEmpty();
             boolean otherPre = other.preRelease != null && !other.preRelease.isEmpty();
             if (!thisPre && !otherPre) return 0;
-            if (!thisPre) return 1;  // 2.0.1 > 2.0.1-beta
+            if (!thisPre) return 1;  // 2.0.1 > 2.0.1-beta.1
             if (!otherPre) return -1;
-            return this.preRelease.compareToIgnoreCase(other.preRelease);
+
+            String[] a = this.preRelease.split("\\.");
+            String[] b = other.preRelease.split("\\.");
+            int len = Math.min(a.length, b.length);
+            for (int i = 0; i < len; i++) {
+                boolean aNum = isDigitsOnly(a[i]);
+                boolean bNum = isDigitsOnly(b[i]);
+                if (aNum && bNum) {
+                    int cmp = compareNumericStrings(a[i], b[i]);
+                    if (cmp != 0) return cmp;
+                } else if (aNum != bNum) {
+                    // В SemVer числовые идентификаторы имеют меньший приоритет, чем буквенные
+                    return aNum ? -1 : 1;
+                } else {
+                    int cmp = a[i].compareToIgnoreCase(b[i]);
+                    if (cmp != 0) return cmp;
+                }
+            }
+            return Integer.compare(a.length, b.length);
+        }
+
+        private static boolean isDigitsOnly(String s) {
+            if (s == null || s.isEmpty()) return false;
+            for (int i = 0; i < s.length(); i++) {
+                if (!Character.isDigit(s.charAt(i))) return false;
+            }
+            return true;
+        }
+
+        private static int compareNumericStrings(String a, String b) {
+            try {
+                return Long.compare(Long.parseLong(a), Long.parseLong(b));
+            } catch (NumberFormatException e) {
+                return a.compareTo(b);
+            }
         }
     }
 }
