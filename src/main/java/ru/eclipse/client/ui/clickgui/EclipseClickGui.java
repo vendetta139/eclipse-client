@@ -16,6 +16,7 @@ import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.HudEditorScreen;
 import ru.example.donorprefix.gui.RenderUtils;
+import ru.example.donorprefix.gui.UpdateNoticeOverlay;
 import ru.example.donorprefix.PrefixMenuScreen;
 import ru.example.donorprefix.ClientPrefixConfig;
 
@@ -31,7 +32,8 @@ import java.util.Map;
 public class EclipseClickGui extends Screen {
 
     private static final Text HEADER_TITLE = Text.literal("§lECLIPSE§r §7CLIENT");
-    private static final Text HEADER_SUBTITLE = Text.literal("§8| 1.21.11 by alone.vendetta");
+    private static final String HEADER_SUB_PREFIX = "| 1.21.11 ";
+    private static final String HEADER_SUB_AUTHOR = "by alone.vendetta";
     private static final Text HUD_BTN_TEXT = Text.literal("❖ HUD РЕДАКТОР");
     private static final Text PFX_BTN_TEXT = Text.literal("✦ ПРЕФИКСЫ");
 
@@ -61,6 +63,7 @@ public class EclipseClickGui extends Screen {
 
     // Плавные анимации состояний
     private final Map<Module, Float> moduleToggleAnims = new HashMap<>();
+    private final UpdateNoticeOverlay updateOverlay = new UpdateNoticeOverlay();
 
     public EclipseClickGui() {
         super(Text.literal("ECLIPSE CLIENT — ClickGUI"));
@@ -102,9 +105,15 @@ public class EclipseClickGui extends Screen {
         renderGuiWindow(context, mouseX, mouseY, alpha, deltaSec);
 
         super.render(context, mouseX, mouseY, delta);
+        updateOverlay.renderModal(context, this.textRenderer, this.width, this.height, mouseX, mouseY);
     }
 
     private void handleMouseDragging(int mouseX, int mouseY) {
+        if (updateOverlay.isModalOpen()) {
+            draggingWindow = false;
+            draggingSlider = null;
+            return;
+        }
         if (this.client == null || this.client.getWindow() == null) return;
         long handle = this.client.getWindow().getHandle();
         boolean mouseDown = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
@@ -142,7 +151,6 @@ public class EclipseClickGui extends Screen {
         // Иконка и логотип ECLIPSE
         EclipseTheme.drawEclipseBadge(context, guiX + 12, guiY + 11, 16, alpha);
         RenderUtils.drawTextWithShadow(context, tr, HEADER_TITLE, guiX + 34, guiY + 15, EclipseColors.TEXT_PRIMARY);
-        RenderUtils.drawTextWithShadow(context, tr, HEADER_SUBTITLE, guiX + 126, guiY + 15, EclipseColors.TEXT_SECONDARY);
 
         // Кнопка HUD редактора
         int hudBtnW = 86;
@@ -165,6 +173,18 @@ public class EclipseClickGui extends Screen {
         int pfxText = hoverPfx ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY;
         RenderUtils.drawFlatCard(context, pfxBtnX, hudBtnY, pfxBtnW, hudBtnH, pfxBg, pfxBorder);
         RenderUtils.drawCenteredTextWithShadow(context, tr, PFX_BTN_TEXT, pfxBtnX + pfxBtnW / 2, hudBtnY + 6, pfxText);
+
+        // Бейдж обновления в шапке (если есть новая версия)
+        int badgeW = updateOverlay.getBadgeWidth(tr);
+        int badgeX = pfxBtnX - badgeW - 6;
+        if (badgeW == 0 || badgeX >= guiX + 255) {
+            RenderUtils.drawTextWithShadow(context, tr, HEADER_SUB_PREFIX, guiX + 126, guiY + 15, EclipseColors.TEXT_SECONDARY);
+            int authorX = guiX + 126 + tr.getWidth(HEADER_SUB_PREFIX);
+            RenderUtils.drawMonochromeShimmer(context, tr, HEADER_SUB_AUTHOR, authorX, guiY + 15, alpha);
+        }
+        if (badgeW > 0) {
+            updateOverlay.renderBadge(context, tr, badgeX, hudBtnY, badgeW, hudBtnH, mouseX, mouseY);
+        }
 
         // ══════════════════════════════════════════════════════════════════════
         // ЛЕВАЯ ПАНЕЛЬ КАТЕГОРИЙ (Sidebar)
@@ -357,7 +377,24 @@ public class EclipseClickGui extends Screen {
         double mouseX = click.x();
         double mouseY = click.y();
         int button = click.button();
+        if (this.textRenderer != null && updateOverlay.handleModalClick(mouseX, mouseY, button, this.width, this.height, this.textRenderer)) {
+            return true;
+        }
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            int hudBtnW = 86;
+            int hudBtnH = 20;
+            int hudBtnX = guiX + guiW - hudBtnW - 10;
+            int hudBtnY = guiY + 9;
+            int pfxBtnW = 76;
+            int pfxBtnX = hudBtnX - pfxBtnW - 6;
+            int badgeW = updateOverlay.getBadgeWidth(this.textRenderer);
+            if (badgeW > 0) {
+                int badgeX = pfxBtnX - badgeW - 6;
+                if (updateOverlay.handleBadgeClick(mouseX, mouseY, button, badgeX, hudBtnY, badgeW, hudBtnH)) {
+                    return true;
+                }
+            }
+
             // Клик по шапке для перемещения окна
             if (mouseX >= guiX && mouseX <= guiX + guiW - 180 && mouseY >= guiY && mouseY <= guiY + 38) {
                 draggingWindow = true;
@@ -367,10 +404,6 @@ public class EclipseClickGui extends Screen {
             }
 
             // Кнопка HUD редактора
-            int hudBtnW = 86;
-            int hudBtnH = 20;
-            int hudBtnX = guiX + guiW - hudBtnW - 10;
-            int hudBtnY = guiY + 9;
             if (mouseX >= hudBtnX && mouseX <= hudBtnX + hudBtnW && mouseY >= hudBtnY && mouseY <= hudBtnY + hudBtnH) {
                 if (this.client != null) {
                     this.client.setScreen(new HudEditorScreen(this));
@@ -379,8 +412,6 @@ public class EclipseClickGui extends Screen {
             }
 
             // Кнопка префиксов
-            int pfxBtnW = 76;
-            int pfxBtnX = hudBtnX - pfxBtnW - 6;
             if (mouseX >= pfxBtnX && mouseX <= pfxBtnX + pfxBtnW && mouseY >= hudBtnY && mouseY <= hudBtnY + hudBtnH) {
                 if (this.client != null) {
                     this.client.setScreen(new PrefixMenuScreen(ClientPrefixConfig.loadOrCreate()));
@@ -506,6 +537,10 @@ public class EclipseClickGui extends Screen {
     public boolean keyPressed(KeyInput keyInput) {
         if (keyInput == null) return false;
         int keyCode = keyInput.key();
+
+        if (updateOverlay.handleKeyPressed(keyCode)) {
+            return true;
+        }
 
         // Назначение клавиши модуля
         if (listeningKeybindModule != null) {

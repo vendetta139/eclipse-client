@@ -1,6 +1,7 @@
 package ru.eclipse.client.mixin;
 
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.LogoDrawer;
@@ -12,6 +13,7 @@ import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.realms.gui.screen.RealmsNotificationsScreen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,18 +22,20 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ru.eclipse.client.ui.clickgui.EclipseClickGui;
 import ru.example.donorprefix.gui.AnimationUtil;
 import ru.example.donorprefix.gui.CosmicBackgroundRenderer;
 import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.RenderUtils;
+import ru.example.donorprefix.gui.UpdateNoticeOverlay;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(TitleScreen.class)
-public abstract class TitleScreenMixin extends Screen {
+public abstract class TitleScreenMixin extends Screen implements UpdateNoticeOverlay.Host {
 
     @Shadow private SplashTextRenderer splashText;
     @Shadow @Final private LogoDrawer logoDrawer;
@@ -40,6 +44,8 @@ public abstract class TitleScreenMixin extends Screen {
     private float eclipseScreenOpen = 0.0f;
     @Unique
     private long eclipseLastRenderTime = 0;
+    @Unique
+    private final UpdateNoticeOverlay eclipseUpdateOverlay = new UpdateNoticeOverlay();
 
     protected TitleScreenMixin(Text title) {
         super(title);
@@ -69,8 +75,9 @@ public abstract class TitleScreenMixin extends Screen {
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Ljava/lang/String;III)V"))
     private void onRedirectVersionText(DrawContext context, TextRenderer textRenderer, String text, int x, int y, int color) {
         if (textRenderer != null && context != null) {
-            String customVer = "ECLIPSE CLIENT 1.21.11 | by alone.vendetta";
-            RenderUtils.drawTextWithShadow(context, textRenderer, customVer, 12, this.height - 12, EclipseColors.TEXT_SECONDARY);
+            String verPrefix = "ECLIPSE CLIENT 1.21.11 | ";
+            RenderUtils.drawTextWithShadow(context, textRenderer, verPrefix, 12, this.height - 12, EclipseColors.TEXT_SECONDARY);
+            RenderUtils.drawMonochromeShimmer(context, textRenderer, "by alone.vendetta", 12 + textRenderer.getWidth(verPrefix), this.height - 12, 1.0f);
         }
     }
 
@@ -217,10 +224,39 @@ public abstract class TitleScreenMixin extends Screen {
                 int subCol = EclipseTheme.withAlpha(EclipseTheme.TEXT_MUTED, alpha * 0.85f);
                 RenderUtils.drawCenteredTextWithShadow(context, tr, Text.literal("C L I E N T   1 . 2 1 . 1 1"), centerX, subY, subCol);
 
-                String copyright = "© Mojang AB | by alone.vendetta";
-                int copyW = tr.getWidth(copyright);
-                RenderUtils.drawTextWithShadow(context, tr, copyright, this.width - copyW - 10, this.height - 15, EclipseColors.TEXT_SECONDARY);
+                String copyPrefix = "© Mojang AB | ";
+                String copyAuthor = "by alone.vendetta";
+                int prefixW = tr.getWidth(copyPrefix);
+                int totalCopyW = prefixW + tr.getWidth(copyAuthor);
+                int copyX = this.width - totalCopyW - 10;
+                RenderUtils.drawTextWithShadow(context, tr, copyPrefix, copyX, this.height - 15, EclipseColors.TEXT_SECONDARY);
+                RenderUtils.drawMonochromeShimmer(context, tr, copyAuthor, copyX + prefixW, this.height - 15, 1.0f);
+
+                int badgeW = eclipseUpdateOverlay.getBadgeWidth(tr);
+                if (badgeW > 0) {
+                    eclipseUpdateOverlay.renderBadge(context, tr, this.width - badgeW - 12, 12, badgeW, 20, mouseX, mouseY);
+                }
+                eclipseUpdateOverlay.renderModal(context, tr, this.width, this.height, mouseX, mouseY);
             }
         } catch (Throwable ignored) {}
+    }
+
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    private void onEclipseMouseClicked(Click click, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
+        if (click == null || this.client == null || this.client.textRenderer == null) return;
+        TextRenderer tr = this.client.textRenderer;
+        if (eclipseUpdateOverlay.handleModalClick(click.x(), click.y(), click.button(), this.width, this.height, tr)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        int badgeW = eclipseUpdateOverlay.getBadgeWidth(tr);
+        if (badgeW > 0 && eclipseUpdateOverlay.handleBadgeClick(click.x(), click.y(), click.button(), this.width - badgeW - 12, 12, badgeW, 20)) {
+            cir.setReturnValue(true);
+        }
+    }
+
+    @Override
+    public boolean eclipseHandleUpdateEscape() {
+        return eclipseUpdateOverlay.handleKeyPressed(GLFW.GLFW_KEY_ESCAPE);
     }
 }

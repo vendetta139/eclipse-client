@@ -5,10 +5,10 @@ import ru.eclipse.client.module.Module;
 import ru.eclipse.client.module.setting.BooleanSetting;
 
 public class TargetHUDModule extends Module {
-    private final BooleanSetting show3DModel = new BooleanSetting("3D Моделька", "Отображать 3D-модель противника в виджете", true);
+    private final BooleanSetting show3DModel = new BooleanSetting("3D Моделька", "Рисует 3D-модель игрока вместо значка", true);
 
     public TargetHUDModule() {
-        super("TargetHUD", "Информативная плашка с ХП противника при атаке и наведении", Category.HUD_OVERLAYS, 0, true);
+        super("TargetHUD", "Показывает ХП, имя и дистанцию до цели", Category.HUD_OVERLAYS, 0, true);
         addSetting(show3DModel);
     }
 

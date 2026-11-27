@@ -10,13 +10,13 @@ import ru.eclipse.client.module.setting.NumberSetting;
 public class CustomCrosshairModule extends Module {
     private final ModeSetting style = new ModeSetting("Стиль", "Форма прицела", "Dot", "Dot", "Cross", "Circle", "T-Shape");
     private final NumberSetting size = new NumberSetting("Размер", "Размер прицела в пикселях", 4.0, 1.0, 12.0, 1.0);
-    private final NumberSetting gap = new NumberSetting("Зазор", "Расстояние от центра", 2.0, 0.0, 8.0, 1.0);
-    private final NumberSetting thickness = new NumberSetting("Толщина", "Толщина линий", 1.0, 1.0, 4.0, 1.0);
-    private final BooleanSetting centerDot = new BooleanSetting("Точка в центре", "Рисовать точку в центре прицела", false);
+    private final NumberSetting gap = new NumberSetting("Зазор", "Отступ от центра прицела", 2.0, 0.0, 8.0, 1.0);
+    private final NumberSetting thickness = new NumberSetting("Толщина", "Толщина линий прицела", 1.0, 1.0, 4.0, 1.0);
+    private final BooleanSetting centerDot = new BooleanSetting("Точка в центре", "Ставит точку в центре прицела", false);
     private final ColorSetting color = new ColorSetting("Цвет", "Цвет прицела", 0xFFFFFFFF);
 
     public CustomCrosshairModule() {
-        super("CustomCrosshair", "Кастомный минималистичный PvP прицел (точка, круг, крестик)", Category.COMBAT_PVP, 0, false);
+        super("CustomCrosshair", "Заменяет прицел на точку, круг или крестик", Category.COMBAT_PVP, 0, false);
         addSetting(style);
         addSetting(size);
         addSetting(gap);

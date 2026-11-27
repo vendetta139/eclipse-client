@@ -21,6 +21,7 @@ import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.HudEditorScreen;
 import ru.example.donorprefix.gui.ModernButtonWidget;
 import ru.example.donorprefix.gui.RenderUtils;
+import ru.example.donorprefix.gui.UpdateNoticeOverlay;
 import ru.example.donorprefix.visual.VisualConfig;
 
 import java.util.*;
@@ -35,12 +36,12 @@ import java.util.function.Supplier;
 public class PrefixMenuScreen extends Screen {
 
     public enum ScreenTab {
-        PREFIXES("✦ Префиксы", "Ротация и управление донат-префиксами"),
-        COMBAT("⚔ Бой & PvP", "Hurt Color, No Hurt Cam, хитмаркеры и цифры урона"),
-        ANIMATIONS("🗡 Анимации", "1.7 Swing, BlockHit, размер рук и заниженный щит"),
-        WORLD("🌌 Мир & Туман", "Fullbright, Low Fire, кастомный туман, погода и глит"),
-        HUD("📊 HUD & Оверлеи", "Прицел, Target HUD, броня, зелья, CPS, Keystrokes"),
-        THEME("🎨 Тема & Стиль", "Modern HD TrueType шрифт и стиль серверных панелей");
+        PREFIXES("✦ Префиксы", "Смена и очередь донат-префиксов"),
+        COMBAT("⚔ Бой & PvP", "Тряска камеры и хитмаркеры при ударе"),
+        ANIMATIONS("🗡 Анимации", "Размер рук, блок мечом и щит"),
+        WORLD("🌌 Мир & Туман", "Яркость, туман, огонь, погода и время"),
+        HUD("📊 HUD & Оверлеи", "Прицел, Target HUD, броня, зелья, CPS"),
+        THEME("🎨 Тема & Стиль", "Цветовая схема и проверка обновлений");
 
         public final String title;
         public final String description;
@@ -100,6 +101,7 @@ public class PrefixMenuScreen extends Screen {
 
     // Интерактивная палитра цветов
     private final ColorPickerModal colorPicker = new ColorPickerModal();
+    private final UpdateNoticeOverlay updateOverlay = new UpdateNoticeOverlay();
 
     // Сайдбарные кнопки и заголовок
     private final List<ModernButtonWidget> sidebarTabButtons = new ArrayList<>();
@@ -674,70 +676,70 @@ public class PrefixMenuScreen extends Screen {
         settingRows.clear();
 
         // 1. Вкладка COMBAT
-        addCategoryHeader(ScreenTab.COMBAT, "Камера и попадания");
+        addCategoryHeader(ScreenTab.COMBAT, "Бой и попадания");
         addSetting(ScreenTab.COMBAT, RowType.TOGGLE, "noHurtCam", "No Hurt Cam",
-                "Полное отключение резкой тряски и наклона камеры при получении ударов",
+                "Убирает тряску камеры при получении урона",
                 () -> visualConfig.noHurtCam, v -> visualConfig.noHurtCam = v);
 
         addSetting(ScreenTab.COMBAT, RowType.TOGGLE, "hitMarkers", "Хитмаркеры (HitMarkers)",
-                "Тактический неоновый крестик на прицеле при попадании по врагам",
+                "Рисует крестик на прицеле при попадании",
                 () -> visualConfig.hitMarkerEnabled, v -> visualConfig.hitMarkerEnabled = v);
 
         addSetting(ScreenTab.COMBAT, RowType.TOGGLE, "hitSound", "Звук удара (Hit Sound)",
-                "Четкий звонкий акустический щелчок при успешном нанесении урона",
+                "Играет звук при попадании по цели",
                 () -> visualConfig.hitSoundEnabled, v -> visualConfig.hitSoundEnabled = v);
 
-        addSegmentedSetting(ScreenTab.COMBAT, "hitSoundType", "Тип звука удара (Sound Pack)",
-                "Выбор акустического эффекта при нанесении урона цели",
+        addSegmentedSetting(ScreenTab.COMBAT, "hitSoundType", "Тип звука удара",
+                "Выбор звука при попадании по цели",
                 new String[]{"Ding", "Skeet", "Chime", "Arrow", "Bonk"},
                 () -> visualConfig.hitSoundType,
                 idx -> visualConfig.hitSoundType = idx);
 
         // 2. Вкладка ANIMATIONS
-        addCategoryHeader(ScreenTab.ANIMATIONS, "Анимации оружия и щита");
+        addCategoryHeader(ScreenTab.ANIMATIONS, "Руки и предметы");
         addSetting(ScreenTab.ANIMATIONS, RowType.TOGGLE, "blockHit", "BlockHit анимация",
-                "Имитация блокирования мечом при удержании правой кнопки мыши (ПКМ)",
+                "Показывает блок мечом при удержании ПКМ",
                 () -> visualConfig.blockHit, v -> visualConfig.blockHit = v);
 
         addSetting(ScreenTab.ANIMATIONS, RowType.TOGGLE, "lowShield", "Заниженный щит (Low Shield)",
-                "Опускает щит во второй руке вниз экрана, освобождая обзор в дуэлях",
+                "Опускает щит ниже, чтобы не мешал обзору",
                 () -> visualConfig.smallShield, v -> visualConfig.smallShield = v);
 
         addSliderSetting(ScreenTab.ANIMATIONS, "handScale", "Масштаб рук (Hand Scale)",
-                "Настройка размера модели рук и удерживаемого предмета от первого лица",
+                "Меняет размер рук и предмета в них",
                 () -> visualConfig.handScale, s -> visualConfig.handScale = s,
                 0.5f, 1.4f, 0.05f, "x");
 
         // 3. Вкладка WORLD
-        addCategoryHeader(ScreenTab.WORLD, "Освещение, туман и огонь");
-        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "fullbright", "Fullbright (Макс. яркость)",
-                "Идеальная видимость в пещерах и ночью без зелья ночного зрения",
+        addCategoryHeader(ScreenTab.WORLD, "Свет, туман и огонь");
+        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "fullbright", "Fullbright",
+                "Убирает темноту в пещерах и ночью",
                 () -> visualConfig.fullbright, v -> visualConfig.fullbright = v);
 
-        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "noFog", "Режим No Fog",
-                "Полное отключение тумана в мире, воде и лаве",
+        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "noFog", "No Fog",
+                "Отключает туман в мире, воде и лаве",
                 () -> visualConfig.noFog, v -> visualConfig.noFog = v);
 
-        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "lowFire", "Заниженный огонь (Low Fire)",
-                "Опускает текстуру горения от первого лица вниз, убирая перекрытие обзора",
+        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "lowFire", "Low Fire",
+                "Опускает огонь ниже, чтобы не мешал обзору",
                 () -> visualConfig.lowFireEnabled, v -> visualConfig.lowFireEnabled = v);
 
-        addSliderSetting(ScreenTab.WORLD, "lowFireOffset", "Смещение огня",
-                "Глубина опускания текстуры огня вниз",
+        addSliderSetting(ScreenTab.WORLD, "lowFireOffset", "Высота огня",
+                "Насколько низко опустить огонь на экране",
                 () -> visualConfig.lowFireOffset, off -> visualConfig.lowFireOffset = off,
                 -0.60f, -0.05f, 0.05f, "");
 
         addCategoryHeader(ScreenTab.WORLD, "Погода и время суток");
         addSetting(ScreenTab.WORLD, RowType.TOGGLE, "clearWeather", "Чистая погода (No Rain)",
-                "Полное отключение дождя, снега и грозы на клиенте",
+                "Отключает дождь, снег и грозу на клиенте",
                 () -> visualConfig.clearWeather, v -> visualConfig.clearWeather = v);
 
-        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "timeChanger", "Фиксатор времени (Time Changer)",
-                "Визуальная фиксация времени суток независимо от сервера",
+        addSetting(ScreenTab.WORLD, RowType.TOGGLE, "timeChanger", "Time Changer",
+                "Фиксирует время суток на клиенте",
                 () -> visualConfig.timeChangerEnabled, v -> visualConfig.timeChangerEnabled = v);
 
         addSegmentedSetting(ScreenTab.WORLD, "timePreset", "Время суток",
-                "Выбор фиксированного времени мира",
+                "Выбор времени суток для клиента",
                 new String[]{"День", "Закат", "Ночь"},
                 () -> {
                     long t = visualConfig.customTime;
@@ -751,9 +753,9 @@ public class PrefixMenuScreen extends Screen {
                 });
 
         // 4. Вкладка HUD
-        addCategoryHeader(ScreenTab.HUD, "Быстрые действия");
-        addButtonSetting(ScreenTab.HUD, "hudEditor", "✦ Интерактивный HUD Редактор",
-                "Нажмите, чтобы визуально перемещать и масштабировать любые HUD виджеты на экране",
+        addCategoryHeader(ScreenTab.HUD, "Редактор HUD");
+        addButtonSetting(ScreenTab.HUD, "hudEditor", "Расположение виджетов",
+                "Открывает экран, где можно двигать панели HUD",
                 "ОТКРЫТЬ", () -> {
                     if (this.client != null) {
                         this.client.setScreen(new HudEditorScreen(this));
@@ -761,87 +763,87 @@ public class PrefixMenuScreen extends Screen {
                 });
 
         addCategoryHeader(ScreenTab.HUD, "Прицел и Target HUD");
-        addSetting(ScreenTab.HUD, RowType.TOGGLE, "crosshair", "Кастомный прицел",
-                "Тактический прицел с настраиваемым цветом",
+        addSetting(ScreenTab.HUD, RowType.TOGGLE, "crosshair", "Свой прицел",
+                "Заменяет обычный прицел на PvP-прицел",
                 () -> visualConfig.customCrosshair, v -> visualConfig.customCrosshair = v);
 
         addSetting(ScreenTab.HUD, RowType.COLOR, "crosshairColor", "Цвет прицела",
-                "Оттенок тактического прицела",
+                "Меняет цвет своего прицела",
                 () -> visualConfig.crosshairColor, c -> visualConfig.crosshairColor = c,
                 () -> visualConfig.crosshairRainbow, r -> visualConfig.crosshairRainbow = r);
 
         addSetting(ScreenTab.HUD, RowType.TOGGLE, "targetHud", "Target HUD",
-                "Информационный виджет противника: моделька, имя, дистанция и полоса HP",
+                "Показывает ХП, имя и дистанцию до цели",
                 () -> visualConfig.targetHudEnabled, v -> visualConfig.targetHudEnabled = v);
 
         addSliderSetting(ScreenTab.HUD, "targetHudScale", "Масштаб Target HUD",
-                "Размер виджета противника на экране (от 0.25x до 2.0x)",
+                "Меняет размер плашки Target HUD",
                 () -> visualConfig.targetHudScale, s -> visualConfig.targetHudScale = s,
                 0.25f, 2.0f, 0.05f, "x");
 
         addSetting(ScreenTab.HUD, RowType.TOGGLE, "targetHud3D", "3D Моделька в Target HUD",
-                "Живая 3D модель цели вместо значка",
+                "Рисует 3D-модель игрока вместо значка",
                 () -> visualConfig.targetHud3DModel, v -> visualConfig.targetHud3DModel = v);
 
-        addCategoryHeader(ScreenTab.HUD, "Информационные HUD панели");
+        addCategoryHeader(ScreenTab.HUD, "Панели на экране");
         addSetting(ScreenTab.HUD, RowType.TOGGLE, "watermark", "Watermark HUD",
-                "Панель статуса: название клиента, FPS и пинг",
+                "Показывает название клиента, FPS и пинг",
                 () -> visualConfig.watermarkEnabled, v -> visualConfig.watermarkEnabled = v);
 
         addSliderSetting(ScreenTab.HUD, "watermarkScale", "Масштаб Watermark",
-                "Размер статус-бара клиента (от 0.25x до 2.0x)",
+                "Меняет размер панели Watermark",
                 () -> visualConfig.watermarkScale, s -> visualConfig.watermarkScale = s,
                 0.25f, 2.0f, 0.05f, "x");
 
         addSetting(ScreenTab.HUD, RowType.TOGGLE, "fpsHud", "FPS HUD",
-                "Отдельный счетчик кадров в секунду (FPS)",
+                "Показывает текущий FPS на экране",
                 () -> visualConfig.fpsHudEnabled, v -> visualConfig.fpsHudEnabled = v);
 
         addSliderSetting(ScreenTab.HUD, "fpsHudScale", "Масштаб FPS HUD",
-                "Размер счетчика FPS (от 0.25x до 2.0x)",
+                "Меняет размер счётчика FPS",
                 () -> visualConfig.fpsHudScale, s -> visualConfig.fpsHudScale = s,
                 0.25f, 2.0f, 0.05f, "x");
 
-        addSetting(ScreenTab.HUD, RowType.TOGGLE, "keystrokes", "Keystrokes (Клавиши)",
-                "Отображение нажатий клавиш W, A, S, D, ЛКМ, ПКМ и Пробела",
+        addSetting(ScreenTab.HUD, RowType.TOGGLE, "keystrokes", "Keystrokes",
+                "Показывает нажатия WASD, ЛКМ, ПКМ и Пробела",
                 () -> visualConfig.keystrokesEnabled, v -> visualConfig.keystrokesEnabled = v);
 
         addSliderSetting(ScreenTab.HUD, "keystrokesScale", "Масштаб Keystrokes",
-                "Размер кнопок WASD и мыши (от 0.25x до 2.0x)",
+                "Меняет размер кнопок WASD и мыши",
                 () -> visualConfig.keystrokesScale, s -> visualConfig.keystrokesScale = s,
                 0.25f, 2.0f, 0.05f, "x");
 
         addSetting(ScreenTab.HUD, RowType.TOGGLE, "cpsCounter", "CPS Counter",
-                "Счетчик кликов в секунду (LMB & RMB)",
+                "Считает клики в секунду для ЛКМ и ПКМ",
                 () -> visualConfig.cpsCounterEnabled, v -> visualConfig.cpsCounterEnabled = v);
 
         addSliderSetting(ScreenTab.HUD, "cpsCounterScale", "Масштаб CPS Counter",
-                "Размер счетчика кликов в секунду (от 0.25x до 2.0x)",
+                "Меняет размер счётчика CPS",
                 () -> visualConfig.cpsCounterScale, s -> visualConfig.cpsCounterScale = s,
                 0.25f, 2.0f, 0.05f, "x");
 
         addSetting(ScreenTab.HUD, RowType.TOGGLE, "armorHud", "Armor HUD",
-                "Отображение экипированной брони с её прочностью",
+                "Показывает надетую броню и её прочность",
                 () -> visualConfig.armorHudEnabled, v -> visualConfig.armorHudEnabled = v);
 
         addSliderSetting(ScreenTab.HUD, "armorHudScale", "Масштаб Armor HUD",
-                "Размер панели брони (от 0.25x до 2.0x)",
+                "Меняет размер панели брони",
                 () -> visualConfig.armorHudScale, s -> visualConfig.armorHudScale = s,
                 0.25f, 2.0f, 0.05f, "x");
 
         addSetting(ScreenTab.HUD, RowType.TOGGLE, "potionHud", "Potion HUD",
-                "Компактный список наложенных эффектов зелий",
+                "Показывает активные эффекты зелий и время",
                 () -> visualConfig.potionHudEnabled, v -> visualConfig.potionHudEnabled = v);
 
         addSliderSetting(ScreenTab.HUD, "potionHudScale", "Масштаб Potion HUD",
-                "Размер списка активных зелий (от 0.25x до 2.0x)",
+                "Меняет размер списка зелий",
                 () -> visualConfig.potionHudScale, s -> visualConfig.potionHudScale = s,
                 0.25f, 2.0f, 0.05f, "x");
 
         // 5. Вкладка THEME
-        addCategoryHeader(ScreenTab.THEME, "Монохромное оформление");
+        addCategoryHeader(ScreenTab.THEME, "Оформление и обновления");
         addSegmentedSetting(ScreenTab.THEME, "themePreset", "Пресет оформления",
-                "Переключение вариантов монохромной палитры",
+                "Выбор варианта чёрно-белой палитры",
                 new String[]{"Obsidian", "Ghost", "Inverted"},
                 () -> visualConfig.themePreset,
                 idx -> {
@@ -850,7 +852,7 @@ public class PrefixMenuScreen extends Screen {
                 });
 
         addSetting(ScreenTab.THEME, RowType.TOGGLE, "checkUpdates", "Проверка обновлений",
-                "Асинхронная проверка новых версий на GitHub",
+                "Ищет новые версии мода на GitHub в фоне",
                 () -> visualConfig.checkUpdates, v -> visualConfig.checkUpdates = v);
 
         addSetting(ScreenTab.THEME, RowType.TOGGLE, "betaChannel", "Бета-канал обновлений",
@@ -1048,6 +1050,19 @@ public class PrefixMenuScreen extends Screen {
             try {
                 renderToast(context);
             } catch (Throwable ignored) {}
+
+            // 9. Бейдж обновления внизу сайдбара и модальное окно поверх всех слоёв
+            try {
+                int updBadgeW = updateOverlay.getBadgeWidth(this.textRenderer);
+                if (updBadgeW > 0) {
+                    int bx = dialogLeft + 8;
+                    int bw = sidebarWidth - 16;
+                    int bh = 22;
+                    int by = dialogTop + dialogHeight - 62;
+                    updateOverlay.renderBadge(context, this.textRenderer, bx, by, bw, bh, mouseX, mouseY);
+                }
+                updateOverlay.renderModal(context, this.textRenderer, this.width, this.height, mouseX, mouseY);
+            } catch (Throwable ignored) {}
         } catch (Throwable ignored) {}
     }
 
@@ -1101,8 +1116,7 @@ public class PrefixMenuScreen extends Screen {
                     textX + eclipseWidth + 6, dialogTop + 10, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
 
             int subY = dialogTop + 22;
-            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("by alone.vendetta"),
-                    textX, subY, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
+            RenderUtils.drawMonochromeShimmer(context, this.textRenderer, "by alone.vendetta", textX, subY, alpha);
 
             context.fill(dialogLeft + 1, dialogTop + 38, dialogLeft + dialogWidth - 1, dialogTop + 39,
                     RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha));
@@ -1506,6 +1520,7 @@ public class PrefixMenuScreen extends Screen {
 
     private boolean wasMouseDown = false;
     private long lastClickTime = 0L;
+    private long modalClickCooldownUntil = 0L;
     private double lastMouseX = 0;
     private double lastMouseY = 0;
 
@@ -1524,7 +1539,7 @@ public class PrefixMenuScreen extends Screen {
             }
         } else if (!isDown && wasMouseDown) {
             mouseReleased(click);
-        } else if (isDown && wasMouseDown) {
+        } else if (isDown && wasMouseDown && !updateOverlay.isModalOpen()) {
             double dx = mouseX - lastMouseX;
             double dy = mouseY - lastMouseY;
             if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
@@ -1545,6 +1560,25 @@ public class PrefixMenuScreen extends Screen {
 
     private boolean dispatchClick(Click click, boolean bl, double mouseX, double mouseY, int button) {
         try {
+            if (System.currentTimeMillis() < modalClickCooldownUntil) {
+                return true;
+            }
+            // 0. Модалка обновления (если открыта) и бейдж в сайдбаре
+            if (this.textRenderer != null && updateOverlay.handleModalClick(mouseX, mouseY, button, this.width, this.height, this.textRenderer)) {
+                modalClickCooldownUntil = System.currentTimeMillis() + 140;
+                return true;
+            }
+            if (updateOverlay.getBadgeWidth(this.textRenderer) > 0) {
+                int bx = dialogLeft + 8;
+                int bw = sidebarWidth - 16;
+                int bh = 22;
+                int by = dialogTop + dialogHeight - 62;
+                if (updateOverlay.handleBadgeClick(mouseX, mouseY, button, bx, by, bw, bh)) {
+                    modalClickCooldownUntil = System.currentTimeMillis() + 140;
+                    return true;
+                }
+            }
+
             // 1. Модальная палитра выбора цвета (если открыта поверх всех слоев)
             if (colorPicker != null && colorPicker.isVisible()) {
                 if (colorPicker.mouseClicked(mouseX, mouseY, button)) {
@@ -1841,6 +1875,9 @@ public class PrefixMenuScreen extends Screen {
     public boolean keyPressed(KeyInput input) {
         try {
             int keyCode = input.key();
+            if (updateOverlay.handleKeyPressed(keyCode)) {
+                return true;
+            }
             if (colorPicker.isVisible()) {
                 if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                     colorPicker.close();

@@ -14,11 +14,11 @@ public class ViewModelModule extends Module {
     private final NumberSetting posY = new NumberSetting("Позиция Y", "Сдвиг по вертикали", 0.0, -1.0, 1.0, 0.05);
     private final NumberSetting posZ = new NumberSetting("Позиция Z", "Сдвиг вперед/назад", 0.0, -1.0, 1.0, 0.05);
 
-    private final BooleanSetting blockHit = new BooleanSetting("BlockHit", "Анимация блока мечом при удержании ПКМ", false);
-    private final BooleanSetting lowShield = new BooleanSetting("Заниженный щит", "Опускает щит во второй руке вниз", false);
+    private final BooleanSetting blockHit = new BooleanSetting("BlockHit", "Показывает блок мечом по ПКМ", false);
+    private final BooleanSetting lowShield = new BooleanSetting("Заниженный щит", "Опускает щит ниже в левой руке", false);
 
     public ViewModelModule() {
-        super("ViewModel", "Позиция, масштаб и анимация предметов в руках от 1-го лица", Category.ANIMATIONS, 0, false);
+        super("ViewModel", "Меняет положение и размер предметов в руках", Category.ANIMATIONS, 0, false);
         addSetting(scaleX);
         addSetting(scaleY);
         addSetting(scaleZ);

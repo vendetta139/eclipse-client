@@ -4,14 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
 import ru.example.donorprefix.visual.VisualConfig;
 
 import java.net.URI;
@@ -41,12 +34,6 @@ public final class UpdateChecker {
     public static final String UPDATE_JSON_URL = "https://raw.githubusercontent.com/vendetta139/eclipse-client/main/version.json";
 
     private static final long PERIODIC_CHECK_MINUTES = 3L;
-    private static final long JOIN_COOLDOWN_MS = 30_000L;
-
-    private static final int COLOR_WHITE = 0xFFFFFF;
-    private static final int COLOR_VERSION = 0xD4D4D8;
-    private static final int COLOR_CHANGELOG = 0xA1A1AA;
-    private static final int COLOR_MUTED = 0x71717A;
 
     private static final AtomicBoolean CHECK_IN_FLIGHT = new AtomicBoolean(false);
     private static final AtomicBoolean SCHEDULER_STARTED = new AtomicBoolean(false);
@@ -70,9 +57,9 @@ public final class UpdateChecker {
     });
 
     private static volatile UpdateInfo pendingUpdate = null;
-    private static volatile String lastNotifiedVersion = null;
-    private static volatile boolean joinHookRegistered = false;
-    private static volatile long lastCheckEpochMs = 0L;
+    private static volatile String lastManifestJson = null;
+    private static volatile boolean lastBetaChannel = false;
+    private static volatile String lastLoggedVersion = null;
 
     public record UpdateInfo(String currentVersion, String latestVersion, String downloadUrl, List<String> changelog) {}
 
@@ -85,16 +72,17 @@ public final class UpdateChecker {
                 .orElse("2.0.0");
     }
 
-    public static void registerChatNotifier() {
-        if (joinHookRegistered) return;
-        joinHookRegistered = true;
-
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            notifyInGameIfPending(client);
-            if (System.currentTimeMillis() - lastCheckEpochMs >= JOIN_COOLDOWN_MS) {
-                checkAsync();
-            }
-        });
+    public static UpdateInfo getPendingUpdate() {
+        VisualConfig cfg = VisualConfig.getInstance();
+        if (cfg != null && !cfg.checkUpdates) {
+            return null;
+        }
+        boolean betaEnabled = cfg != null && cfg.betaChannel;
+        if (lastManifestJson != null && betaEnabled != lastBetaChannel) {
+            lastBetaChannel = betaEnabled;
+            pendingUpdate = parseManifestIfNewer(lastManifestJson, getCurrentModVersion(), betaEnabled);
+        }
+        return pendingUpdate;
     }
 
     public static void checkAsync() {
@@ -107,7 +95,6 @@ public final class UpdateChecker {
         if (!CHECK_IN_FLIGHT.compareAndSet(false, true)) {
             return;
         }
-        lastCheckEpochMs = System.currentTimeMillis();
 
         String currentVersion = getCurrentModVersion();
 
@@ -148,7 +135,6 @@ public final class UpdateChecker {
                     });
         } catch (Throwable ignored) {
             CHECK_IN_FLIGHT.set(false);
-            // Молча игнорируем ошибки сети/URL без спама стектрейсом
         }
     }
 
@@ -164,30 +150,18 @@ public final class UpdateChecker {
     }
 
     private static void handleManifestResponse(String body, String currentVersion) {
-        UpdateInfo info = parseManifestIfNewer(body, currentVersion);
-        if (info == null) {
-            return;
-        }
+        VisualConfig cfg = VisualConfig.getInstance();
+        boolean betaEnabled = cfg != null && cfg.betaChannel;
+        lastManifestJson = body;
+        lastBetaChannel = betaEnabled;
+
+        UpdateInfo info = parseManifestIfNewer(body, currentVersion, betaEnabled);
         pendingUpdate = info;
-        if (!info.latestVersion().equals(lastNotifiedVersion)) {
+        if (info != null && !info.latestVersion().equals(lastLoggedVersion)) {
+            lastLoggedVersion = info.latestVersion();
             EclipseClient.LOGGER.info("Доступно обновление ECLIPSE CLIENT: v{} -> v{}",
                     info.currentVersion(), info.latestVersion());
         }
-        notifyInGameIfPending(MinecraftClient.getInstance());
-    }
-
-    private static void notifyInGameIfPending(MinecraftClient client) {
-        UpdateInfo info = pendingUpdate;
-        if (client == null || info == null || info.latestVersion().equals(lastNotifiedVersion)) {
-            return;
-        }
-        client.execute(() -> {
-            UpdateInfo latest = pendingUpdate;
-            if (client.player != null && latest != null && !latest.latestVersion().equals(lastNotifiedVersion)) {
-                lastNotifiedVersion = latest.latestVersion();
-                client.player.sendMessage(buildChatMessage(latest), false);
-            }
-        });
     }
 
     public static UpdateInfo parseManifestIfNewer(String jsonBody, String currentVersion) {
@@ -257,7 +231,6 @@ public final class UpdateChecker {
                     String line = el.getAsString().trim();
                     if (!line.isEmpty()) {
                         changes.add(line);
-                        if (changes.size() >= 4) break;
                     }
                 }
             }
@@ -285,50 +258,8 @@ public final class UpdateChecker {
         return s;
     }
 
-    public static MutableText buildChatMessage(UpdateInfo info) {
-        MutableText root = Text.empty();
-
-        // Монохромный заголовок: ECLIPSE жирным белым, версия светло-серой (#D4D4D8)
-        root.append(Text.literal("ECLIPSE").setStyle(Style.EMPTY.withColor(COLOR_WHITE).withBold(true)));
-        root.append(Text.literal(" • ").setStyle(Style.EMPTY.withColor(COLOR_MUTED)));
-        root.append(Text.literal("Доступна новая версия: ").setStyle(Style.EMPTY.withColor(COLOR_VERSION)));
-        root.append(Text.literal("v" + info.currentVersion() + " -> v" + info.latestVersion())
-                .setStyle(Style.EMPTY.withColor(COLOR_VERSION).withBold(true)));
-
-        // Список изменений серым (#A1A1AA)
-        if (info.changelog() != null && !info.changelog().isEmpty()) {
-            int limit = Math.min(4, info.changelog().size());
-            for (int i = 0; i < limit; i++) {
-                root.append(Text.literal("\n  • " + info.changelog().get(i))
-                        .setStyle(Style.EMPTY.withColor(COLOR_CHANGELOG)));
-            }
-        }
-
-        // Кликабельная кнопка [ Скачать обновление ] — белой с подчёркиванием
-        if (info.downloadUrl() != null && !info.downloadUrl().isBlank()) {
-            URI uri = parseHttpUri(info.downloadUrl());
-            if (uri != null) {
-                MutableText hover = Text.empty()
-                        .append(Text.literal("Открыть страницу загрузки:\n").setStyle(Style.EMPTY.withColor(COLOR_VERSION)))
-                        .append(Text.literal(info.downloadUrl()).setStyle(Style.EMPTY.withColor(COLOR_WHITE)));
-
-                Style btnStyle = Style.EMPTY
-                        .withColor(COLOR_WHITE)
-                        .withUnderline(true)
-                        .withClickEvent(new ClickEvent.OpenUrl(uri))
-                        .withHoverEvent(new HoverEvent.ShowText(hover));
-
-                root.append(Text.literal("\n"));
-                root.append(Text.literal("[ ").setStyle(Style.EMPTY.withColor(COLOR_MUTED)));
-                root.append(Text.literal("Скачать обновление").setStyle(btnStyle));
-                root.append(Text.literal(" ]").setStyle(Style.EMPTY.withColor(COLOR_MUTED)));
-            }
-        }
-
-        return root;
-    }
-
-    private static URI parseHttpUri(String rawUrl) {
+    public static URI parseHttpUri(String rawUrl) {
+        if (rawUrl == null || rawUrl.isBlank()) return null;
         try {
             URI uri = URI.create(rawUrl.trim());
             String scheme = uri.getScheme();

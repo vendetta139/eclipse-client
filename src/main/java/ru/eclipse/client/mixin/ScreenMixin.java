@@ -5,19 +5,23 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.GameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
 import org.joml.Matrix3x2fStack;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ru.example.donorprefix.gui.AnimationUtil;
 import ru.example.donorprefix.gui.CosmicBackgroundRenderer;
 import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.RenderUtils;
+import ru.example.donorprefix.gui.UpdateNoticeOverlay;
 
 @Mixin(Screen.class)
 public abstract class ScreenMixin {
@@ -31,6 +35,15 @@ public abstract class ScreenMixin {
     private long eclipseLastFrameTime = 0;
     @Unique
     private boolean eclipseMatrixPushed = false;
+
+    @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
+    private void onEclipseKeyPressed(KeyInput input, CallbackInfoReturnable<Boolean> cir) {
+        if (input != null && input.key() == GLFW.GLFW_KEY_ESCAPE
+                && (Object) this instanceof UpdateNoticeOverlay.Host host
+                && host.eclipseHandleUpdateEscape()) {
+            cir.setReturnValue(true);
+        }
+    }
 
     @Inject(method = "init(II)V", at = @At("TAIL"))
     private void onScreenInit(int width, int height, CallbackInfo ci) {

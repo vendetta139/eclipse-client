@@ -102,10 +102,8 @@ public class RenderUtils {
     }
 
     /**
-     * Отрисовка градиентного текста с мягким переливом (стиль Eclipse)
-    /**
-     * Безопасная процедурная отрисовка градиентного текста (Eclipse Wave) посимвольно.
-     * Не создает сложных объектов стилей TextColor, работает стабильно и сохраняет кернинг шрифта.
+     * Процедурная отрисовка градиентного текста (Eclipse Wave) посимвольно.
+     * Не создает сложных объектов Text, использует кэш символов и сохраняет кернинг шрифта.
      */
     public static void drawGradientText(DrawContext context, TextRenderer textRenderer, String fullText, int startX, int y, int colorStart, int colorEnd, boolean animated, float alpha) {
         if (context == null || fullText == null || fullText.isEmpty()) return;
@@ -122,9 +120,9 @@ public class RenderUtils {
             char c = fullText.charAt(i);
             String charStr = charToString(c);
 
-            // Плавная интерполяция между золотым (#F5A65B) и фиолетовым (#6A67CE) на основе позиции и времени
+            // Плавная волна между colorStart и colorEnd слева направо
             float factor = animated
-                    ? (float) (Math.sin((time / 400.0) + (i * 0.15)) * 0.5 + 0.5)
+                    ? (float) (Math.sin((time / 350.0) - (i * 0.30)) * 0.5 + 0.5)
                     : (fullText.length() > 1 ? (float) i / (float) (fullText.length() - 1) : 0.0f);
 
             int r1 = (colorStart >> 16) & 0xFF;
@@ -151,6 +149,13 @@ public class RenderUtils {
 
     public static void drawGradientText(DrawContext context, TextRenderer textRenderer, String fullText, int startX, int y, int colorStart, int colorEnd, boolean animated) {
         drawGradientText(context, textRenderer, fullText, startX, y, colorStart, colorEnd, animated, 1.0f);
+    }
+
+    /**
+     * Чёрно-белое переливание текста (тёмно-графитовый #52525B -> белый #F4F4F5).
+     */
+    public static void drawMonochromeShimmer(DrawContext context, TextRenderer textRenderer, String text, int x, int y, float alpha) {
+        drawGradientText(context, textRenderer, text, x, y, EclipseColors.TEXT_DISABLED, EclipseColors.TEXT_PRIMARY, true, alpha);
     }
 
     /**

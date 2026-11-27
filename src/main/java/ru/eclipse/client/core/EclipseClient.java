@@ -45,7 +45,6 @@ public final class EclipseClient implements ClientModInitializer {
         EclipseStateSync.getInstance().init();
 
         DonorPrefixClientMod.initFromCore();
-        UpdateChecker.registerChatNotifier();
         UpdateChecker.checkAsync();
 
         LOGGER.info("{} успешно инициализирован под Minecraft 1.21.11!", CLIENT_NAME);

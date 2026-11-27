@@ -6,11 +6,11 @@ import ru.eclipse.client.module.setting.BooleanSetting;
 import ru.eclipse.client.module.setting.NumberSetting;
 
 public class AutoPrefixModule extends Module {
-    private final NumberSetting interval = new NumberSetting("Интервал", "Период смены префикса в секундах", 30.0, 5.0, 300.0, 5.0, "s");
-    private final BooleanSetting random = new BooleanSetting("Случайный порядок", "Выбирать префиксы не по порядку", false);
+    private final NumberSetting interval = new NumberSetting("Интервал", "Пауза между сменами в секундах", 30.0, 5.0, 300.0, 5.0, "s");
+    private final BooleanSetting random = new BooleanSetting("Случайный порядок", "Берёт префиксы вразброс вместо списка", false);
 
     public AutoPrefixModule() {
-        super("AutoPrefix", "Автоматическая циклическая смена донат-префиксов на серверах", Category.PREFIXES, 0, true);
+        super("AutoPrefix", "Меняет донат-префикс на сервере по таймеру", Category.PREFIXES, 0, true);
         addSetting(interval);
         addSetting(random);
     }

@@ -6,11 +6,11 @@ import ru.eclipse.client.module.setting.ModeSetting;
 import ru.eclipse.client.module.setting.NumberSetting;
 
 public class TimeChangerModule extends Module {
-    private final ModeSetting mode = new ModeSetting("Режим", "Время суток", "Sunset", "Day", "Noon", "Sunset", "Night", "Midnight", "Custom");
-    private final NumberSetting customTime = new NumberSetting("Свое время", "Значение тиков времени", 12000.0, 0.0, 24000.0, 500.0, "t");
+    private final ModeSetting mode = new ModeSetting("Режим", "Выбор времени суток", "Sunset", "Day", "Noon", "Sunset", "Night", "Midnight", "Custom");
+    private final NumberSetting customTime = new NumberSetting("Свое время", "Точное время в тиках", 12000.0, 0.0, 24000.0, 500.0, "t");
 
     public TimeChangerModule() {
-        super("TimeChanger", "Визуальная фиксация времени суток на клиенте (день, закат, ночь)", Category.WORLD_FOG, 0, false);
+        super("TimeChanger", "Фиксирует время суток на клиенте", Category.WORLD_FOG, 0, false);
         addSetting(mode);
         addSetting(customTime);
     }

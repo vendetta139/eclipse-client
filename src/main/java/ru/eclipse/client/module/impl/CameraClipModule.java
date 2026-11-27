@@ -5,6 +5,6 @@ import ru.eclipse.client.module.Module;
 
 public class CameraClipModule extends Module {
     public CameraClipModule() {
-        super("CameraClip", "Камера от третьего лица свободно проходит сквозь стены и блоки", Category.WORLD_FOG, 0, false);
+        super("CameraClip", "Камера от третьего лица проходит сквозь блоки", Category.WORLD_FOG, 0, false);
     }
 }
