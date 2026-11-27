@@ -1,5 +1,6 @@
 package ru.example.donorprefix.gui;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.OrderedText;
@@ -14,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Компактный монохромный бейдж обновлений и модальное окно списка изменений.
+ * Компактный монохромный бейдж обновлений, модальное окно и игровой Toast.
  * Кэширует перенесённые строки, не создаёт лишних объектов на каждом кадре.
  */
 public final class UpdateNoticeOverlay {
@@ -24,9 +25,20 @@ public final class UpdateNoticeOverlay {
     }
 
     private static final Text MODAL_TITLE = Text.literal("Доступно обновление").formatted(Formatting.BOLD);
+    private static final Text TOAST_TITLE = Text.literal("Вышла новая версия").formatted(Formatting.BOLD);
     private static final Text BTN_DOWNLOAD = Text.literal("Скачать").formatted(Formatting.BOLD);
     private static final Text BTN_CLOSE = Text.literal("Закрыть");
     private static final Text EMPTY_CHANGELOG = Text.literal("Список изменений не указан.");
+
+    private static final long TOAST_ENTER_MS = 300L;
+    private static final long TOAST_STAY_MS = 4600L;
+    private static final long TOAST_EXIT_MS = 350L;
+    private static final long TOAST_TOTAL_MS = TOAST_ENTER_MS + TOAST_STAY_MS + TOAST_EXIT_MS;
+
+    private static String toastTriggeredVersion = null;
+    private static long toastStartMs = 0L;
+    private static String toastSubLine = "";
+    private static int cachedToastWidth = 176;
 
     private record WrappedLine(OrderedText text, boolean firstOfEntry, boolean itemGapBefore) {}
 
@@ -271,5 +283,73 @@ public final class UpdateNoticeOverlay {
 
     private static boolean isInside(double mouseX, double mouseY, int x, int y, int w, int h) {
         return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+    }
+
+    /**
+     * Всплывающий монохромный баннер в правом верхнем углу экрана на ~5 секунд при появлении новой версии.
+     */
+    public static void renderInGameToast(DrawContext context, MinecraftClient client) {
+        if (context == null || client == null || client.player == null || client.world == null) return;
+        TextRenderer tr = client.textRenderer;
+        if (tr == null) return;
+
+        UpdateChecker.UpdateInfo info = UpdateChecker.getPendingUpdate();
+        if (info == null) {
+            toastStartMs = 0L;
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (!info.latestVersion().equals(toastTriggeredVersion)) {
+            toastTriggeredVersion = info.latestVersion();
+            toastStartMs = now;
+            toastSubLine = "v" + info.currentVersion() + " → v" + info.latestVersion() + " • RShift";
+            cachedToastWidth = Math.max(156, Math.max(tr.getWidth(TOAST_TITLE), tr.getWidth(toastSubLine)) + 24);
+        }
+
+        if (toastStartMs <= 0L) return;
+
+        long elapsed = now - toastStartMs;
+        if (elapsed >= TOAST_TOTAL_MS) {
+            toastStartMs = 0L;
+            return;
+        }
+
+        float slideProgress;
+        float alpha;
+        if (elapsed < TOAST_ENTER_MS) {
+            float p = (float) elapsed / (float) TOAST_ENTER_MS;
+            slideProgress = AnimationUtil.easeOutCubic(p);
+            alpha = slideProgress;
+        } else if (elapsed < TOAST_ENTER_MS + TOAST_STAY_MS) {
+            slideProgress = 1.0f;
+            alpha = 1.0f;
+        } else {
+            float p = (float) (elapsed - TOAST_ENTER_MS - TOAST_STAY_MS) / (float) TOAST_EXIT_MS;
+            float exitEase = AnimationUtil.easeOutCubic(p);
+            slideProgress = 1.0f - exitEase;
+            alpha = slideProgress;
+        }
+
+        if (alpha <= 0.02f) return;
+
+        int screenW = client.getWindow() != null ? client.getWindow().getScaledWidth() : context.getScaledWindowWidth();
+        int toastW = cachedToastWidth;
+        int toastH = 34;
+        int targetX = screenW - toastW - 10;
+        int hiddenX = screenW + 8;
+        int toastX = Math.round(hiddenX + (targetX - hiddenX) * slideProgress);
+        int toastY = 10;
+
+        int bg = RenderUtils.multiplyAlpha(EclipseColors.BG_WINDOW_TRANSLUCENT, alpha);
+        int border = RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha);
+        int accent = RenderUtils.multiplyAlpha(EclipseColors.ACCENT_WHITE, alpha);
+        int titleCol = RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha);
+        int subCol = RenderUtils.multiplyAlpha(EclipseColors.TEXT_MUTED_HUD, alpha);
+
+        RenderUtils.drawFlatCard(context, toastX, toastY, toastW, toastH, bg, border);
+        context.fill(toastX + 1, toastY + 5, toastX + 3, toastY + toastH - 5, accent);
+        context.drawText(tr, TOAST_TITLE, toastX + 11, toastY + 7, titleCol, true);
+        context.drawText(tr, toastSubLine, toastX + 11, toastY + 19, subCol, true);
     }
 }

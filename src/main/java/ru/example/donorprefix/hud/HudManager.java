@@ -2,6 +2,7 @@ package ru.example.donorprefix.hud;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import ru.example.donorprefix.gui.UpdateNoticeOverlay;
 import ru.example.donorprefix.visual.CustomCrosshairRenderer;
 import ru.example.donorprefix.visual.HitMarkerManager;
 import ru.example.donorprefix.visual.VisualConfig;
@@ -87,5 +88,10 @@ public class HudManager {
                 el.render(context, false, false, false);
             } catch (Throwable ignored) {}
         }
+
+        // 4. Всплывающее уведомление об обновлении
+        try {
+            UpdateNoticeOverlay.renderInGameToast(context, client);
+        } catch (Throwable ignored) {}
     }
 }
