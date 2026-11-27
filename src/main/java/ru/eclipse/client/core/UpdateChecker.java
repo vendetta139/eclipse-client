@@ -43,10 +43,10 @@ public final class UpdateChecker {
     private static final long PERIODIC_CHECK_MINUTES = 3L;
     private static final long JOIN_COOLDOWN_MS = 30_000L;
 
-    private static final int COLOR_GOLD = 0xF5A65B;
-    private static final int COLOR_INDIGO = 0x6A67CE;
-    private static final int COLOR_TEXT = 0xEAECEF;
-    private static final int COLOR_MUTED = 0x8A8A93;
+    private static final int COLOR_WHITE = 0xFFFFFF;
+    private static final int COLOR_VERSION = 0xD4D4D8;
+    private static final int COLOR_CHANGELOG = 0xA1A1AA;
+    private static final int COLOR_MUTED = 0x71717A;
 
     private static final AtomicBoolean CHECK_IN_FLIGHT = new AtomicBoolean(false);
     private static final AtomicBoolean SCHEDULER_STARTED = new AtomicBoolean(false);
@@ -288,42 +288,40 @@ public final class UpdateChecker {
     public static MutableText buildChatMessage(UpdateInfo info) {
         MutableText root = Text.empty();
 
-        // Верхний разделитель
-        root.append(Text.literal("✦ ").setStyle(Style.EMPTY.withColor(COLOR_GOLD).withBold(true)));
-        root.append(Text.literal("ECLIPSE CLIENT").setStyle(Style.EMPTY.withColor(COLOR_GOLD).withBold(true)));
+        // Монохромный заголовок: ECLIPSE жирным белым, версия светло-серой (#D4D4D8)
+        root.append(Text.literal("ECLIPSE").setStyle(Style.EMPTY.withColor(COLOR_WHITE).withBold(true)));
         root.append(Text.literal(" • ").setStyle(Style.EMPTY.withColor(COLOR_MUTED)));
-        root.append(Text.literal("Доступна новая версия: ").setStyle(Style.EMPTY.withColor(COLOR_TEXT)));
-        root.append(Text.literal("v" + info.currentVersion()).setStyle(Style.EMPTY.withColor(COLOR_MUTED)));
-        root.append(Text.literal(" → ").setStyle(Style.EMPTY.withColor(COLOR_INDIGO).withBold(true)));
-        root.append(Text.literal("v" + info.latestVersion()).setStyle(Style.EMPTY.withColor(COLOR_GOLD).withBold(true)));
+        root.append(Text.literal("Доступна новая версия: ").setStyle(Style.EMPTY.withColor(COLOR_VERSION)));
+        root.append(Text.literal("v" + info.currentVersion() + " -> v" + info.latestVersion())
+                .setStyle(Style.EMPTY.withColor(COLOR_VERSION).withBold(true)));
 
-        // Список изменений (до 4 пунктов)
+        // Список изменений серым (#A1A1AA)
         if (info.changelog() != null && !info.changelog().isEmpty()) {
             int limit = Math.min(4, info.changelog().size());
             for (int i = 0; i < limit; i++) {
-                root.append(Text.literal("\n  • ").setStyle(Style.EMPTY.withColor(COLOR_INDIGO)));
-                root.append(Text.literal(info.changelog().get(i)).setStyle(Style.EMPTY.withColor(COLOR_TEXT)));
+                root.append(Text.literal("\n  • " + info.changelog().get(i))
+                        .setStyle(Style.EMPTY.withColor(COLOR_CHANGELOG)));
             }
         }
 
-        // Кликабельная кнопка [ ⬇ Скачать обновление ]
+        // Кликабельная кнопка [ Скачать обновление ] — белой с подчёркиванием
         if (info.downloadUrl() != null && !info.downloadUrl().isBlank()) {
             URI uri = parseHttpUri(info.downloadUrl());
             if (uri != null) {
                 MutableText hover = Text.empty()
-                        .append(Text.literal("Открыть страницу загрузки:\n").setStyle(Style.EMPTY.withColor(COLOR_TEXT)))
-                        .append(Text.literal(info.downloadUrl()).setStyle(Style.EMPTY.withColor(COLOR_GOLD)));
+                        .append(Text.literal("Открыть страницу загрузки:\n").setStyle(Style.EMPTY.withColor(COLOR_VERSION)))
+                        .append(Text.literal(info.downloadUrl()).setStyle(Style.EMPTY.withColor(COLOR_WHITE)));
 
                 Style btnStyle = Style.EMPTY
-                        .withColor(COLOR_GOLD)
-                        .withBold(true)
+                        .withColor(COLOR_WHITE)
+                        .withUnderline(true)
                         .withClickEvent(new ClickEvent.OpenUrl(uri))
                         .withHoverEvent(new HoverEvent.ShowText(hover));
 
                 root.append(Text.literal("\n"));
-                root.append(Text.literal("[ ").setStyle(Style.EMPTY.withColor(COLOR_INDIGO).withBold(true)));
-                root.append(Text.literal("⬇ Скачать обновление").setStyle(btnStyle));
-                root.append(Text.literal(" ]").setStyle(Style.EMPTY.withColor(COLOR_INDIGO).withBold(true)));
+                root.append(Text.literal("[ ").setStyle(Style.EMPTY.withColor(COLOR_MUTED)));
+                root.append(Text.literal("Скачать обновление").setStyle(btnStyle));
+                root.append(Text.literal(" ]").setStyle(Style.EMPTY.withColor(COLOR_MUTED)));
             }
         }
 

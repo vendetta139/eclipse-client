@@ -15,6 +15,7 @@ import net.minecraft.util.math.MathHelper;
 import org.lwjgl.glfw.GLFW;
 import ru.example.donorprefix.gui.AnimationUtil;
 import ru.example.donorprefix.gui.ColorPickerModal;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.EclipseTextFieldWidget;
 import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.HudEditorScreen;
@@ -293,7 +294,7 @@ public class PrefixMenuScreen extends Screen {
                     config.save();
                     updateMasterStatusButton();
                     showToast(config.enabled ? "Авто-ротация активирована" : "Авто-ротация на паузе",
-                            config.enabled ? 0xFF10B981 : 0xFFF5A65B);
+                            config.enabled ? EclipseColors.BORDER_ACTIVE : EclipseColors.TEXT_SECONDARY);
                 }
         ).dimensions(statusX, statusY, statusW, statusH)
                 .style(config.enabled ? ModernButtonWidget.Style.STATUS_ACTIVE : ModernButtonWidget.Style.STATUS_PAUSED)
@@ -588,7 +589,7 @@ public class PrefixMenuScreen extends Screen {
         collectCurrentPrefixFields();
         config.prefixes.add("&b&lНОВЫЙ");
         initTabContent();
-        showToast("Новый префикс добавлен в очередь", 0xFF6A67CE);
+        showToast("Новый префикс добавлен в очередь", EclipseColors.BORDER_ACTIVE);
     }
 
     private void deletePrefix(int index) {
@@ -596,7 +597,7 @@ public class PrefixMenuScreen extends Screen {
         if (index >= 0 && index < config.prefixes.size()) {
             config.prefixes.remove(index);
             initTabContent();
-            showToast("Префикс удалён", 0xFFEF4444);
+            showToast("Префикс удалён", EclipseColors.TEXT_SECONDARY);
         }
     }
 
@@ -622,9 +623,9 @@ public class PrefixMenuScreen extends Screen {
             String val = config.prefixes.get(index);
             boolean ok = DonorPrefixClientMod.sendPrefixCommand(this.client, config.commandTemplate, val);
             if (ok) {
-                showToast("Команда отправлена на сервер!", 0xFF10B981);
+                showToast("Команда отправлена на сервер!", EclipseColors.BORDER_ACTIVE);
             } else {
-                showToast("Ошибка отправки (не на сервере?)", 0xFFEF4444);
+                showToast("Ошибка отправки (не на сервере?)", EclipseColors.TEXT_SECONDARY);
             }
         }
     }
@@ -663,7 +664,7 @@ public class PrefixMenuScreen extends Screen {
         if (DonorPrefixClientMod.getInstance() != null) {
             DonorPrefixClientMod.getInstance().resetTimer();
         }
-        showToast("Настройки успешно сохранены!", 0xFF10B981);
+        showToast("Настройки успешно сохранены!", EclipseColors.BORDER_ACTIVE);
     }
 
     // =========================================================================
@@ -838,25 +839,15 @@ public class PrefixMenuScreen extends Screen {
                 0.25f, 2.0f, 0.05f, "x");
 
         // 5. Вкладка THEME
-        addCategoryHeader(ScreenTab.THEME, "Цветовая схема HUD");
+        addCategoryHeader(ScreenTab.THEME, "Монохромное оформление");
         addSegmentedSetting(ScreenTab.THEME, "themePreset", "Пресет оформления",
-                "Быстрое переключение цветовой палитры клиента",
-                new String[]{"Eclipse", "Violet", "Cyan", "Emerald", "Crimson"},
+                "Переключение вариантов монохромной палитры",
+                new String[]{"Obsidian", "Ghost", "Inverted"},
                 () -> visualConfig.themePreset,
                 idx -> {
                     visualConfig.applyThemePreset(idx);
-                    showToast("Тема оформления обновлена!", visualConfig.themePrimaryColor);
+                    showToast("Тема оформления обновлена!", EclipseColors.BORDER_ACTIVE);
                 });
-
-        addSetting(ScreenTab.THEME, RowType.COLOR, "themePrimary", "Основной акцентный цвет",
-                "Главный цвет акцентов HUD-виджетов",
-                () -> visualConfig.themePrimaryColor, c -> visualConfig.themePrimaryColor = c,
-                () -> false, r -> {});
-
-        addSetting(ScreenTab.THEME, RowType.COLOR, "themeGlow", "Цвет свечения HUD",
-                "Оттенок мягкого ореола вокруг HUD панелей",
-                () -> visualConfig.themeGlowColor, c -> visualConfig.themeGlowColor = c,
-                () -> false, r -> {});
 
         addSetting(ScreenTab.THEME, RowType.TOGGLE, "checkUpdates", "Проверка обновлений",
                 "Асинхронная проверка новых версий на GitHub",
@@ -1061,34 +1052,19 @@ public class PrefixMenuScreen extends Screen {
     }
 
     private void renderMainDialog(DrawContext context, float alpha) {
-        // Мягкое космическое свечение вокруг окна
-        RenderUtils.drawSoftGlow(context, dialogLeft, dialogTop, dialogWidth, dialogHeight, 12, 4, RenderUtils.multiplyAlpha(0x2A6A67CE, alpha));
-
-        // 1. Основное тело окна: глубокий темный #0B0B10 (alpha 95%)
-        int mainBg = RenderUtils.multiplyAlpha(0xF20B0B10, alpha);
-        RenderUtils.drawRoundedRect(context, dialogLeft, dialogTop, dialogWidth, dialogHeight, 12, mainBg);
-
-        // 2. Внешняя тонкая обводка окна (1px): сдержанная темно-графитовая #232533
-        int outlineCol = RenderUtils.multiplyAlpha(0xFF232533, alpha);
-        RenderUtils.drawRoundedOutline(context, dialogLeft, dialogTop, dialogWidth, dialogHeight, 12, outlineCol);
-
-        // Мягкий градиентный перелив на верхнем и нижнем ребре от золотистого #F5A65B к индиго #6A67CE
-        int gold = RenderUtils.multiplyAlpha(0xFFF5A65B, alpha * 0.9f);
-        int indigo = RenderUtils.multiplyAlpha(0xFF6A67CE, alpha * 0.9f);
-        RenderUtils.drawGradientLineH(context, dialogLeft + 12, dialogTop, dialogWidth - 24, 1, gold, indigo);
-        RenderUtils.drawGradientLineH(context, dialogLeft + 12, dialogTop + dialogHeight - 1, dialogWidth - 24, 1, gold, indigo);
+        // Плоская монохромная подложка #09090B и чёткая 1px рамка #24242A
+        int mainBg = RenderUtils.multiplyAlpha(EclipseColors.BG_WINDOW_TRANSLUCENT, alpha);
+        int outlineCol = RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha);
+        RenderUtils.drawFlatCard(context, dialogLeft, dialogTop, dialogWidth, dialogHeight, mainBg, outlineCol);
     }
 
     private void renderSidebar(DrawContext context, float alpha) {
-        // Подложка сайдбара
-        int sidebarBg = RenderUtils.multiplyAlpha(0x1E0B0B10, alpha);
-        RenderUtils.drawRoundedRect(context, dialogLeft + 2, dialogTop + 2, sidebarWidth - 4, dialogHeight - 4, 10, sidebarBg);
+        int sidebarBg = RenderUtils.multiplyAlpha(EclipseColors.BG_WINDOW, alpha);
+        context.fill(dialogLeft + 1, dialogTop + 39, dialogLeft + sidebarWidth, dialogTop + dialogHeight - 1, sidebarBg);
 
-        // Разделительная вертикальная линия
-        int dividerCol = RenderUtils.multiplyAlpha(0xFF232533, alpha);
-        context.fill(dialogLeft + sidebarWidth, dialogTop + 40, dialogLeft + sidebarWidth + 1, dialogTop + dialogHeight - 12, dividerCol);
+        int dividerCol = RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha);
+        context.fill(dialogLeft + sidebarWidth, dialogTop + 39, dialogLeft + sidebarWidth + 1, dialogTop + dialogHeight - 1, dividerCol);
 
-        // Анимированный плавающий индикатор активной вкладки
         int targetY = dialogTop + 48;
         for (int i = 0; i < ScreenTab.values().length; i++) {
             if (ScreenTab.values()[i] == currentTab) {
@@ -1098,59 +1074,47 @@ public class PrefixMenuScreen extends Screen {
         }
         animatedTabY = MathHelper.lerp(0.2f, animatedTabY, (float) targetY);
 
-        // Вертикальный золотисто-фиолетовый индикатор слева (2px, градиент #F5A65B -> #6A67CE)
-        int indicatorX = dialogLeft + 7;
-        int indicatorW = 2;
-        int indicatorH = 22;
-        int gold = RenderUtils.multiplyAlpha(0xFFF5A65B, alpha);
-        int indigo = RenderUtils.multiplyAlpha(0xFF6A67CE, alpha);
-        EclipseTheme.drawVerticalGradient(context, indicatorX, (int) animatedTabY + 3, indicatorW, indicatorH, gold, indigo);
-        RenderUtils.drawSoftGlow(context, indicatorX, (int) animatedTabY + 3, indicatorW, indicatorH, 2, 2, RenderUtils.multiplyAlpha(0x556A67CE, alpha));
+        // Мягкая подсветка активной вкладки (#18181D) и тонкая вертикальная белая полоска (2px)
+        context.fill(dialogLeft + 8, (int) animatedTabY, dialogLeft + sidebarWidth - 6, (int) animatedTabY + 28,
+                RenderUtils.multiplyAlpha(EclipseColors.BG_SIDEBAR_ACTIVE, alpha));
+        context.fill(dialogLeft + 8, (int) animatedTabY + 3, dialogLeft + 10, (int) animatedTabY + 25,
+                RenderUtils.multiplyAlpha(EclipseColors.ACCENT_WHITE, alpha));
     }
 
     private void renderHeader(DrawContext context, float alpha) {
         try {
-            // 0. Плашка шапки в глубоком стиле #0D0E15
-            int headerPlateBg = RenderUtils.multiplyAlpha(0xFF0D0E15, alpha);
-            RenderUtils.drawRoundedRect(context, dialogLeft + 2, dialogTop + 2, dialogWidth - 4, 36, 10, headerPlateBg);
+            int headerPlateBg = RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, alpha);
+            context.fill(dialogLeft + 1, dialogTop + 1, dialogLeft + dialogWidth - 1, dialogTop + 38, headerPlateBg);
 
-            // 1. Компактный значок затмения (Badge 22x22) с анимацией дыхания и вращения
             int badgeSize = 22;
             int badgeX = dialogLeft + 12;
             int badgeY = dialogTop + 8;
             EclipseTheme.drawEclipseBadge(context, badgeX, badgeY, badgeSize, alpha, this.animationTime);
 
-            // 2. Название мода: "ECLIPSE" (#EAECEF) и "VISUAL MOD" (#7D8296) с отступом 6px
             int textX = badgeX + badgeSize + 8;
             MutableText logoText = Text.literal("ECLIPSE").formatted(Formatting.BOLD);
-            RenderUtils.drawTextWithShadow(context, this.textRenderer, logoText, textX, dialogTop + 10, RenderUtils.multiplyAlpha(0xFFEAECEF, alpha));
+            RenderUtils.drawTextWithShadow(context, this.textRenderer, logoText, textX, dialogTop + 10,
+                    RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
 
             int eclipseWidth = this.textRenderer != null ? this.textRenderer.getWidth(logoText) : 48;
-            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("VISUAL MOD"),
-                    textX + eclipseWidth + 6, dialogTop + 10, RenderUtils.multiplyAlpha(0xFF7D8296, alpha));
+            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("CLIENT"),
+                    textX + eclipseWidth + 6, dialogTop + 10, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
 
-            // 3. Фирменная подпись: "by " (#7D8296) + мягкий перелив "alone.vendetta" (#F5A65B -> #6A67CE)
             int subY = dialogTop + 22;
-            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("by "), textX, subY, RenderUtils.multiplyAlpha(0xFF7D8296, alpha));
-            int byWidth = this.textRenderer != null ? this.textRenderer.getWidth("by ") : 14;
-            RenderUtils.drawGradientText(context, this.textRenderer, "alone.vendetta", textX + byWidth, subY, 0xFFF5A65B, 0xFF6A67CE, true, alpha);
+            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("by alone.vendetta"),
+                    textX, subY, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
 
-            // Тонкая градиентная линия под шапкой от золотистого к фиолетовому (#F5A65B -> #6A67CE)
-            RenderUtils.drawGradientLineH(context, dialogLeft + 10, dialogTop + 38, dialogWidth - 20, 1,
-                    RenderUtils.multiplyAlpha(0xFFF5A65B, alpha * 0.85f),
-                    RenderUtils.multiplyAlpha(0xFF6A67CE, alpha * 0.85f));
+            context.fill(dialogLeft + 1, dialogTop + 38, dialogLeft + dialogWidth - 1, dialogTop + 39,
+                    RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha));
 
-            // Индикатор FPS: мягкая зеленая точка #6BCB77, текст светло-серый #A0A5B8
             int fps = this.client != null ? this.client.getCurrentFps() : 60;
             int metricsX = dialogLeft + sidebarWidth + 205;
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("• "),
-                    metricsX, dialogTop + 16, RenderUtils.multiplyAlpha(0xFF6BCB77, alpha));
+                    metricsX, dialogTop + 16, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
             int dotW = this.textRenderer != null ? this.textRenderer.getWidth("• ") : 6;
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(fps + " FPS"),
-                    metricsX + dotW, dialogTop + 16, RenderUtils.multiplyAlpha(0xFFA0A5B8, alpha));
-        } catch (Throwable t) {
-            System.err.println("[ClickGUI] Error in renderHeader: " + t);
-        }
+                    metricsX + dotW, dialogTop + 16, RenderUtils.multiplyAlpha(EclipseColors.TEXT_MUTED_HUD, alpha));
+        } catch (Throwable ignored) {}
     }
 
     private void renderTabContent(DrawContext context, int mouseX, int mouseY, float alpha) {
@@ -1189,29 +1153,28 @@ public class PrefixMenuScreen extends Screen {
             setCardWidgetsVisible(card, true);
 
             boolean isActive = (i == activeIdx && config.enabled);
-            int cardBg = RenderUtils.multiplyAlpha(0xFF101118, alpha);
-            int cardBorder = isActive ? RenderUtils.multiplyAlpha(0xFF6A67CE, alpha) : RenderUtils.multiplyAlpha(0xFF1C1E2B, alpha);
+            int cardBg = RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, alpha);
+            int cardBorder = isActive ? RenderUtils.multiplyAlpha(EclipseColors.BORDER_ACTIVE, alpha) : RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha);
 
-            // Карточка префикса
-            RenderUtils.drawCyberCard(context, contentLeft + 6, cardY, listWidth, cardH, 6, cardBg, cardBorder,
-                    isActive ? RenderUtils.multiplyAlpha(0x336A67CE, alpha) : 0);
+            // Плоская карточка префикса
+            RenderUtils.drawFlatCard(context, contentLeft + 6, cardY, listWidth, cardH, cardBg, cardBorder);
 
             // Номер позиции в очереди
             String numStr = "#" + (i + 1);
-            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(numStr).formatted(Formatting.DARK_GRAY),
-                    contentLeft + 12, cardY + 7, RenderUtils.multiplyAlpha(0xFF64748B, alpha));
+            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(numStr),
+                    contentLeft + 12, cardY + 7, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
 
             // Статус карточки (АКТИВЕН / СЛЕДУЮЩИЙ)
             if (isActive) {
                 String actStr = "● АКТИВЕН [Смена: " + (secsUntil > 0 ? secsUntil + "с" : "...") + "]";
-                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(actStr).formatted(Formatting.LIGHT_PURPLE),
-                        contentLeft + 36, cardY + 7, RenderUtils.multiplyAlpha(0xFFC084FC, alpha));
+                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(actStr),
+                        contentLeft + 36, cardY + 7, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
             } else if (i == (activeIdx + 1) % Math.max(1, config.prefixes.size()) && config.enabled) {
-                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("○ Следующий в очереди").formatted(Formatting.GRAY),
-                        contentLeft + 36, cardY + 7, RenderUtils.multiplyAlpha(0xFF94A3B8, alpha));
+                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("○ Следующий в очереди"),
+                        contentLeft + 36, cardY + 7, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
             }
 
-            // Живой предпросмотр префикса (кэшируется по тексту)
+            // Живой предпросмотр префикса (цветной рендер HEX и &-кодов сохранён!)
             String curText = card.field != null ? card.field.getText() : card.initialText;
             if (!curText.equals(card.lastPreviewRaw) || card.cachedPreview == null) {
                 card.lastPreviewRaw = curText;
@@ -1227,17 +1190,17 @@ public class PrefixMenuScreen extends Screen {
         int settingsY = addY + 34;
 
         if (settingsY + 100 >= contentTop && settingsY <= contentBottom) {
-            RenderUtils.drawCyberCard(context, contentLeft + 6, settingsY, listWidth, 106, 6,
-                    RenderUtils.multiplyAlpha(0xFF101118, alpha), RenderUtils.multiplyAlpha(0xFF1C1E2B, alpha), 0);
+            RenderUtils.drawFlatCard(context, contentLeft + 6, settingsY, listWidth, 106,
+                    RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, alpha), RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha));
 
-            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("⚙ Параметры ротации").formatted(Formatting.BOLD),
-                    contentLeft + 14, settingsY + 7, RenderUtils.multiplyAlpha(0xFFEAECEF, alpha));
+            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("Параметры ротации").formatted(Formatting.BOLD),
+                    contentLeft + 14, settingsY + 7, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
 
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("Кулдаун:"),
-                    contentLeft + 14, settingsY + 25, RenderUtils.multiplyAlpha(0xFFA0A5B8, alpha));
+                    contentLeft + 14, settingsY + 25, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
 
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal("Шаблон:"),
-                    contentLeft + 14, settingsY + 50, RenderUtils.multiplyAlpha(0xFFA0A5B8, alpha));
+                    contentLeft + 14, settingsY + 50, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
         }
     }
 
@@ -1261,45 +1224,36 @@ public class PrefixMenuScreen extends Screen {
 
             // 1. Отрисовка заголовка категории
             if (r.type == RowType.HEADER) {
-                int dotColor = RenderUtils.multiplyAlpha(cfg.themePrimaryColor, alpha);
-                RenderUtils.drawRoundedRect(context, r.x + 2, r.y + 10, 4, 10, 2, dotColor);
-                RenderUtils.drawSoftGlow(context, r.x + 2, r.y + 10, 4, 10, 4, 1, RenderUtils.multiplyAlpha(cfg.themePrimaryColor, alpha * 0.6f));
+                context.fill(r.x + 2, r.y + 10, r.x + 5, r.y + 20, RenderUtils.multiplyAlpha(EclipseColors.ACCENT_WHITE, alpha));
 
                 String titleText = r.title.toUpperCase();
                 RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(titleText).formatted(Formatting.BOLD),
-                        r.x + 12, r.y + 11, RenderUtils.multiplyAlpha(cfg.themePrimaryColor, alpha));
+                        r.x + 12, r.y + 11, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
 
                 int titleW = this.textRenderer.getWidth(titleText);
                 int lineStart = r.x + 18 + titleW;
                 int lineEnd = r.x + r.width - 8;
                 if (lineEnd > lineStart) {
-                    context.fillGradient(lineStart, r.y + 15, lineEnd, r.y + 16,
-                            RenderUtils.multiplyAlpha(cfg.themePrimaryColor, alpha * 0.35f),
-                            RenderUtils.multiplyAlpha(0x00000000, 0f));
+                    context.fill(lineStart, r.y + 15, lineEnd, r.y + 16, RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha));
                 }
                 continue;
             }
 
-            // 2. Отрисовка интерактивной карточки
+            // 2. Отрисовка плоской карточки
             boolean hovered = mouseX >= r.x && mouseX <= r.x + r.width && mouseY >= r.y && mouseY <= r.y + r.height;
 
-            int rowBg = hovered ? RenderUtils.multiplyAlpha(0x331C2030, alpha) : RenderUtils.multiplyAlpha(0xFF101118, alpha);
-            int rowBorder = hovered ? RenderUtils.multiplyAlpha(0xFF6A67CE, alpha * 0.85f) : RenderUtils.multiplyAlpha(0xFF1C1E2B, alpha);
-
-            // Карточка опции с мягким космическим свечением при наведении
-            if (hovered) {
-                RenderUtils.drawSoftGlow(context, r.x, r.y, r.width, r.height, 6, 2, RenderUtils.multiplyAlpha(0x336A67CE, alpha));
-            }
-            RenderUtils.drawCyberCard(context, r.x, r.y, r.width, r.height, 6, rowBg, rowBorder, 0);
+            int rowBg = hovered ? RenderUtils.multiplyAlpha(EclipseColors.BG_HOVER, alpha) : RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, alpha);
+            int rowBorder = hovered ? RenderUtils.multiplyAlpha(EclipseColors.BORDER_ACTIVE, alpha) : RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha);
+            RenderUtils.drawFlatCard(context, r.x, r.y, r.width, r.height, rowBg, rowBorder);
 
             // Название и описание
             int textY = r.y + (r.description != null ? 8 : 17);
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(r.title).formatted(Formatting.BOLD),
-                    r.x + 12, textY, RenderUtils.multiplyAlpha(0xFFEAECEF, alpha));
+                    r.x + 12, textY, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
 
             if (r.description != null) {
-                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(r.description).formatted(Formatting.GRAY),
-                        r.x + 12, textY + 13, RenderUtils.multiplyAlpha(0xFF7D8296, alpha));
+                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(r.description),
+                        r.x + 12, textY + 13, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
             }
 
             // Правая интерактивная часть
@@ -1322,28 +1276,27 @@ public class PrefixMenuScreen extends Screen {
         // 1. Шапка результатов поиска
         if (startY + 20 >= contentTop && startY <= contentBottom) {
             String queryDisplay = searchQuery.length() > 22 ? searchQuery.substring(0, 20) + "..." : searchQuery;
-            String headerTitle = "🔍 РЕЗУЛЬТАТЫ ПОИСКА: \"" + queryDisplay + "\"";
-            RenderUtils.drawGradientText(context, this.textRenderer, headerTitle, contentLeft + 8, startY + 2,
-                    0xFFF5A65B, 0xFF6A67CE, false, alpha);
+            String headerTitle = "ПОИСК: \"" + queryDisplay + "\"";
+            RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(headerTitle).formatted(Formatting.BOLD),
+                    contentLeft + 8, startY + 2, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
 
-            String countText = "Найдено модулей: " + matchCount;
+            String countText = "Найдено: " + matchCount;
             int countW = this.textRenderer.getWidth(countText);
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(countText),
-                    contentRight - countW - 14, startY + 2, RenderUtils.multiplyAlpha(0xFF7D8296, alpha));
+                    contentRight - countW - 14, startY + 2, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
 
-            RenderUtils.drawGradientLineH(context, contentLeft + 6, startY + 18, contentRight - contentLeft - 14, 1,
-                    RenderUtils.multiplyAlpha(0x55F5A65B, alpha), RenderUtils.multiplyAlpha(0x556A67CE, alpha));
+            context.fill(contentLeft + 6, startY + 18, contentRight - 8, startY + 19, RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha));
         }
 
         // 2. Если ничего не найдено
         if (matchCount == 0) {
             int emptyY = contentTop + (contentBottom - contentTop) / 2 - 20;
             String noMatch = "Модули по запросу \"" + searchQuery + "\" не найдены";
-            String tip = "Попробуйте: pvp, туман, hud, fps, cps, щит, урон, glint, броня";
+            String tip = "Попробуйте: туман, hud, fps, cps, щит, броня";
             RenderUtils.drawCenteredTextWithShadow(context, this.textRenderer, Text.literal(noMatch),
-                    contentLeft + (contentRight - contentLeft) / 2, emptyY, RenderUtils.multiplyAlpha(0xFFF5A65B, alpha));
+                    contentLeft + (contentRight - contentLeft) / 2, emptyY, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
             RenderUtils.drawCenteredTextWithShadow(context, this.textRenderer, Text.literal(tip),
-                    contentLeft + (contentRight - contentLeft) / 2, emptyY + 16, RenderUtils.multiplyAlpha(0xFF7D8296, alpha));
+                    contentLeft + (contentRight - contentLeft) / 2, emptyY + 16, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
             return;
         }
 
@@ -1352,33 +1305,25 @@ public class PrefixMenuScreen extends Screen {
             if (!matchesSearch(r)) continue;
             if (r.y + r.height < contentTop || r.y > contentBottom) continue;
 
-            boolean hovered = mouseX >= r.x && mouseX <= r.x + r.width && mouseY >= r.y && mouseY <= r.y + r.height;
+            boolean hovered = mouseX >= r.x && mouseX <= r.x + r.width && mouseY >= r.y && mouseY <= r.height;
 
-            int rowBg = hovered ? RenderUtils.multiplyAlpha(0x331C2030, alpha) : RenderUtils.multiplyAlpha(0xFF101118, alpha);
-            int rowBorder = hovered ? RenderUtils.multiplyAlpha(0xFF6A67CE, alpha * 0.85f) : RenderUtils.multiplyAlpha(0xFF1C1E2B, alpha);
+            int rowBg = hovered ? RenderUtils.multiplyAlpha(EclipseColors.BG_HOVER, alpha) : RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, alpha);
+            int rowBorder = hovered ? RenderUtils.multiplyAlpha(EclipseColors.BORDER_ACTIVE, alpha) : RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha);
+            RenderUtils.drawFlatCard(context, r.x, r.y, r.width, r.height, rowBg, rowBorder);
 
-            if (hovered) {
-                RenderUtils.drawSoftGlow(context, r.x, r.y, r.width, r.height, 6, 2, RenderUtils.multiplyAlpha(0x336A67CE, alpha));
-            }
-            RenderUtils.drawCyberCard(context, r.x, r.y, r.width, r.height, 6, rowBg, rowBorder, 0);
-
-            // Бейдж вкладки (например: [БОЙ & PVP])
             String tabTag = "[" + r.tab.title.toUpperCase() + "]";
             int tagW = this.textRenderer.getWidth(tabTag);
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(tabTag),
-                    r.x + 12, r.y + 8, RenderUtils.multiplyAlpha(0xFF6A67CE, alpha));
+                    r.x + 12, r.y + 8, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
 
-            // Заголовок
             RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(r.title).formatted(Formatting.BOLD),
-                    r.x + 18 + tagW, r.y + 8, RenderUtils.multiplyAlpha(0xFFEAECEF, alpha));
+                    r.x + 18 + tagW, r.y + 8, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
 
-            // Описание
             if (r.description != null && !r.description.isEmpty()) {
-                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(r.description).formatted(Formatting.GRAY),
-                        r.x + 12, r.y + 23, RenderUtils.multiplyAlpha(0xFF7D8296, alpha));
+                RenderUtils.drawTextWithShadow(context, this.textRenderer, Text.literal(r.description),
+                        r.x + 12, r.y + 23, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
             }
 
-            // Правая интерактивная часть
             int ctrlY = r.y + (r.height - 18) / 2;
             renderSettingControl(context, r, ctrlY, alpha);
         }
@@ -1408,10 +1353,10 @@ public class PrefixMenuScreen extends Screen {
                 int sliderY = r.y + (r.height - 14) / 2;
 
                 RenderUtils.drawSlider(context, sliderX, sliderY, sliderW, 14, smoothNorm,
-                        EclipseTheme.TRACK_BG,
-                        EclipseTheme.ACCENT_GOLD,
-                        EclipseTheme.ACCENT_INDIGO,
-                        EclipseTheme.ACCENT_GOLD);
+                        EclipseColors.TRACK_BG,
+                        EclipseColors.ACCENT_WHITE,
+                        EclipseColors.ACCENT_WHITE,
+                        EclipseColors.BG_WINDOW);
 
                 if (Float.compare(r.lastSliderVal, val) != 0 || r.cachedSliderText == null) {
                     r.lastSliderVal = val;
@@ -1423,7 +1368,7 @@ public class PrefixMenuScreen extends Screen {
                     r.cachedSliderText = Text.literal(str);
                 }
                 RenderUtils.drawTextWithShadow(context, this.textRenderer, r.cachedSliderText,
-                        r.x + r.width - 48, r.y + (r.height - 8) / 2, RenderUtils.multiplyAlpha(0xFFEAECEF, alpha));
+                        r.x + r.width - 48, r.y + (r.height - 8) / 2, RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, alpha));
             }
             case COLOR -> {
                 int col = r.colorGetter != null ? r.colorGetter.get() : 0xFFFFFFFF;
@@ -1435,36 +1380,40 @@ public class PrefixMenuScreen extends Screen {
                 if (rain) {
                     RenderUtils.drawHueBar(context, swatchX, ctrlY, swatchW, swatchH);
                 } else {
-                    RenderUtils.drawRoundedRect(context, swatchX, ctrlY, swatchW, swatchH, 4, col | 0xFF000000);
-                    RenderUtils.drawRoundedOutline(context, swatchX, ctrlY, swatchW, swatchH, 4, 0x55FFFFFF);
+                    RenderUtils.drawFlatCard(context, swatchX, ctrlY, swatchW, swatchH, col | 0xFF000000, EclipseColors.BORDER_ACTIVE);
                 }
             }
             case SEGMENTED -> {
                 if (r.options != null && r.options.length > 0) {
                     int sel = r.optionGetter != null ? r.optionGetter.get() : 0;
-                    int segW = 38;
+                    int segW = 54;
                     int totalW = r.options.length * (segW + 3);
                     int startSegX = r.x + r.width - totalW - 10;
 
                     for (int s = 0; s < r.options.length; s++) {
                         int sx = startSegX + s * (segW + 3);
                         boolean isSel = (s == sel);
-                        int sBg = isSel ? RenderUtils.multiplyAlpha(0xFF161824, alpha) : RenderUtils.multiplyAlpha(0x22101118, alpha);
-                        int sBorder = isSel ? RenderUtils.multiplyAlpha(0xFF6A67CE, alpha) : RenderUtils.multiplyAlpha(0xFF232533, alpha);
+                        int sBg = isSel ? RenderUtils.multiplyAlpha(EclipseColors.ACCENT_WHITE, alpha)
+                                : RenderUtils.multiplyAlpha(EclipseColors.TRACK_BG, alpha);
+                        int sBorder = isSel ? RenderUtils.multiplyAlpha(EclipseColors.BORDER_ACTIVE, alpha)
+                                : RenderUtils.multiplyAlpha(EclipseColors.BORDER, alpha);
+                        int sText = isSel ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_SECONDARY;
 
-                        RenderUtils.drawPill(context, sx, ctrlY, segW, 18, sBg, sBorder);
+                        RenderUtils.drawFlatCard(context, sx, ctrlY, segW, 18, sBg, sBorder);
                         RenderUtils.drawCenteredTextWithShadow(context, this.textRenderer, Text.literal(r.options[s]),
-                                 sx + segW / 2, ctrlY + 5, isSel ? 0xFFFFFFFF : 0xFF7D8296);
+                                sx + segW / 2, ctrlY + 5, sText);
                     }
                 }
             }
             case BUTTON -> {
                 int btnW = 68;
                 int btnX = r.x + r.width - btnW - 10;
-                RenderUtils.drawPill(context, btnX, ctrlY, btnW, 18,
-                        RenderUtils.multiplyAlpha(0xFF161824, alpha), RenderUtils.multiplyAlpha(0xFF6A67CE, alpha));
-                RenderUtils.drawCenteredTextWithShadow(context, this.textRenderer, Text.literal(r.buttonText != null ? r.buttonText : "ОТКРЫТЬ").formatted(Formatting.BOLD),
-                        btnX + btnW / 2, ctrlY + 5, 0xFFEAECEF);
+                RenderUtils.drawFlatCard(context, btnX, ctrlY, btnW, 18,
+                        RenderUtils.multiplyAlpha(EclipseColors.BG_SIDEBAR_ACTIVE, alpha),
+                        RenderUtils.multiplyAlpha(EclipseColors.BORDER_ACTIVE, alpha));
+                RenderUtils.drawCenteredTextWithShadow(context, this.textRenderer,
+                        Text.literal(r.buttonText != null ? r.buttonText : "ОТКРЫТЬ").formatted(Formatting.BOLD),
+                        btnX + btnW / 2, ctrlY + 5, EclipseColors.TEXT_PRIMARY);
             }
             default -> {}
         }
@@ -1479,13 +1428,13 @@ public class PrefixMenuScreen extends Screen {
         int trackY = contentTop;
 
         // Дорожка скролла
-        RenderUtils.drawRoundedRect(context, trackX, trackY, 4, trackH, 2, RenderUtils.multiplyAlpha(0xFF101118, alpha));
+        context.fill(trackX, trackY, trackX + 4, trackY + trackH, RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, alpha));
 
         // Бегунок
         int thumbH = Math.max(22, (int) ((double) trackH / (trackH + maxScroll) * trackH));
         int thumbY = trackY + (int) ((getScroll() / maxScroll) * (trackH - thumbH));
 
-        RenderUtils.drawRoundedRect(context, trackX, thumbY, 4, thumbH, 2, RenderUtils.multiplyAlpha(0x886A67CE, alpha));
+        context.fill(trackX, thumbY, trackX + 4, thumbY + thumbH, RenderUtils.multiplyAlpha(EclipseColors.TEXT_SECONDARY, alpha));
     }
 
     private void renderToast(DrawContext context) {
@@ -1509,12 +1458,12 @@ public class PrefixMenuScreen extends Screen {
         int startToastY = targetY + 14;
         int toastY = Math.round(startToastY + (targetY - startToastY) * easedSlide);
 
-        RenderUtils.drawSoftGlow(context, toastX, toastY, toastW, toastH, 6, 4, RenderUtils.multiplyAlpha(toastColor, toastAlpha * 0.45f));
-        RenderUtils.drawRoundedRect(context, toastX, toastY, toastW, toastH, 6, RenderUtils.multiplyAlpha(0xF00D0E15, toastAlpha));
-        RenderUtils.drawRoundedOutline(context, toastX, toastY, toastW, toastH, 6, RenderUtils.multiplyAlpha(toastColor, toastAlpha * 0.85f));
+        RenderUtils.drawFlatCard(context, toastX, toastY, toastW, toastH,
+                RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, toastAlpha),
+                RenderUtils.multiplyAlpha(EclipseColors.BORDER_ACTIVE, toastAlpha));
 
         RenderUtils.drawCenteredTextWithShadow(context, this.textRenderer, toastText, toastX + toastW / 2, toastY + 7,
-                RenderUtils.multiplyAlpha(0xFFFFFFFF, toastAlpha));
+                RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, toastAlpha));
     }
 
     public void showToast(String message, int color) {
@@ -1763,7 +1712,8 @@ public class PrefixMenuScreen extends Screen {
                     r.toggleSetter.accept(newVal);
                     ru.eclipse.client.module.ModuleManager.getInstance().syncConfigsToModules();
                     visualConfig.save();
-                    showToast(r.title + ": " + (newVal ? "ВКЛ" : "ВЫКЛ"), newVal ? 0xFF10B981 : 0xFFF59E0B);
+                    showToast(r.title + ": " + (newVal ? "ВКЛ" : "ВЫКЛ"),
+                            newVal ? EclipseColors.BORDER_ACTIVE : EclipseColors.TEXT_SECONDARY);
                 }
             }
             case SLIDER -> {
@@ -1791,7 +1741,7 @@ public class PrefixMenuScreen extends Screen {
             }
             case SEGMENTED -> {
                 if (r.options != null && r.options.length > 0) {
-                    int segW = 38;
+                    int segW = 54;
                     int totalW = r.options.length * (segW + 3);
                     int startSegX = r.x + r.width - totalW - 10;
                     for (int s = 0; s < r.options.length; s++) {
@@ -1801,7 +1751,7 @@ public class PrefixMenuScreen extends Screen {
                                 r.optionSetter.accept(s);
                                 ru.eclipse.client.module.ModuleManager.getInstance().syncConfigsToModules();
                                 visualConfig.save();
-                                showToast(r.title + " → " + r.options[s], 0xFF6A67CE);
+                                showToast(r.title + " → " + r.options[s], EclipseColors.BORDER_ACTIVE);
                             }
                             break;
                         }

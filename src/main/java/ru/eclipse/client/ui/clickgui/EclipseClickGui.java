@@ -12,6 +12,7 @@ import ru.eclipse.client.module.Module;
 import ru.eclipse.client.module.ModuleManager;
 import ru.eclipse.client.module.setting.*;
 import ru.example.donorprefix.gui.AnimationUtil;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.HudEditorScreen;
 import ru.example.donorprefix.gui.RenderUtils;
@@ -128,22 +129,20 @@ public class EclipseClickGui extends Screen {
         TextRenderer tr = this.textRenderer;
         if (tr == null) return;
 
-        // Фон главного окна ClickGUI (глубокий обсидиановый кард с мягким свечением)
-        RenderUtils.drawRoundedRect(context, guiX, guiY, guiW, guiH, 8, 0xF50B0B10);
-        RenderUtils.drawRoundedOutline(context, guiX, guiY, guiW, guiH, 8, 0xFF232533);
-        RenderUtils.drawSoftGlow(context, guiX, guiY, guiW, guiH, 8, 4, 0x336D28D9);
+        // Фон главного окна ClickGUI (плоский тёмный #09090B с тонкой 1px рамкой #24242A)
+        RenderUtils.drawFlatCard(context, guiX, guiY, guiW, guiH, EclipseColors.BG_WINDOW_TRANSLUCENT, EclipseColors.BORDER);
 
         // ══════════════════════════════════════════════════════════════════════
         // ШАПКА ОКНА (Title Bar)
         // ══════════════════════════════════════════════════════════════════════
         int headerH = 38;
-        context.fill(guiX, guiY, guiX + guiW, guiY + headerH, 0x6612131C);
-        context.fill(guiX, guiY + headerH - 1, guiX + guiW, guiY + headerH, 0xFF1E202C);
+        context.fill(guiX + 1, guiY + 1, guiX + guiW - 1, guiY + headerH, EclipseColors.BG_CARD);
+        context.fill(guiX + 1, guiY + headerH - 1, guiX + guiW - 1, guiY + headerH, EclipseColors.BORDER);
 
         // Иконка и логотип ECLIPSE
         EclipseTheme.drawEclipseBadge(context, guiX + 12, guiY + 11, 16, alpha);
-        RenderUtils.drawTextWithShadow(context, tr, HEADER_TITLE, guiX + 34, guiY + 15, 0xFFFFFFFF);
-        RenderUtils.drawTextWithShadow(context, tr, HEADER_SUBTITLE, guiX + 126, guiY + 15, 0xFF7D8296);
+        RenderUtils.drawTextWithShadow(context, tr, HEADER_TITLE, guiX + 34, guiY + 15, EclipseColors.TEXT_PRIMARY);
+        RenderUtils.drawTextWithShadow(context, tr, HEADER_SUBTITLE, guiX + 126, guiY + 15, EclipseColors.TEXT_SECONDARY);
 
         // Кнопка HUD редактора
         int hudBtnW = 86;
@@ -151,20 +150,20 @@ public class EclipseClickGui extends Screen {
         int hudBtnX = guiX + guiW - hudBtnW - 10;
         int hudBtnY = guiY + 9;
         boolean hoverHud = mouseX >= hudBtnX && mouseX <= hudBtnX + hudBtnW && mouseY >= hudBtnY && mouseY <= hudBtnY + hudBtnH;
-        int hudBg = hoverHud ? 0xE6F5A65B : 0xCC1A1B28;
-        int hudText = hoverHud ? 0xFF0B0B10 : 0xFFF5A65B;
-        RenderUtils.drawRoundedRect(context, hudBtnX, hudBtnY, hudBtnW, hudBtnH, 4, hudBg);
-        RenderUtils.drawRoundedOutline(context, hudBtnX, hudBtnY, hudBtnW, hudBtnH, 4, 0x88F5A65B);
+        int hudBg = hoverHud ? EclipseColors.ACCENT_WHITE : EclipseColors.BG_CARD;
+        int hudBorder = hoverHud ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
+        int hudText = hoverHud ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY;
+        RenderUtils.drawFlatCard(context, hudBtnX, hudBtnY, hudBtnW, hudBtnH, hudBg, hudBorder);
         RenderUtils.drawCenteredTextWithShadow(context, tr, HUD_BTN_TEXT, hudBtnX + hudBtnW / 2, hudBtnY + 6, hudText);
 
         // Кнопка меню префиксов
         int pfxBtnW = 76;
         int pfxBtnX = hudBtnX - pfxBtnW - 6;
         boolean hoverPfx = mouseX >= pfxBtnX && mouseX <= pfxBtnX + pfxBtnW && mouseY >= hudBtnY && mouseY <= hudBtnY + hudBtnH;
-        int pfxBg = hoverPfx ? 0xE66D28D9 : 0xCC1A1B28;
-        int pfxText = hoverPfx ? 0xFFFFFFFF : 0xFFD946EF;
-        RenderUtils.drawRoundedRect(context, pfxBtnX, hudBtnY, pfxBtnW, hudBtnH, 4, pfxBg);
-        RenderUtils.drawRoundedOutline(context, pfxBtnX, hudBtnY, pfxBtnW, hudBtnH, 4, 0x886D28D9);
+        int pfxBg = hoverPfx ? EclipseColors.ACCENT_WHITE : EclipseColors.BG_CARD;
+        int pfxBorder = hoverPfx ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
+        int pfxText = hoverPfx ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY;
+        RenderUtils.drawFlatCard(context, pfxBtnX, hudBtnY, pfxBtnW, hudBtnH, pfxBg, pfxBorder);
         RenderUtils.drawCenteredTextWithShadow(context, tr, PFX_BTN_TEXT, pfxBtnX + pfxBtnW / 2, hudBtnY + 6, pfxText);
 
         // ══════════════════════════════════════════════════════════════════════
@@ -172,10 +171,9 @@ public class EclipseClickGui extends Screen {
         // ══════════════════════════════════════════════════════════════════════
         int sidebarW = 140;
         int contentY = guiY + headerH;
-        int contentH = guiH - headerH;
 
-        context.fill(guiX, contentY, guiX + sidebarW, guiY + guiH, 0x4D0E0F16);
-        context.fill(guiX + sidebarW - 1, contentY, guiX + sidebarW, guiY + guiH, 0xFF1E202C);
+        context.fill(guiX + 1, contentY, guiX + sidebarW, guiY + guiH - 1, EclipseColors.BG_WINDOW);
+        context.fill(guiX + sidebarW - 1, contentY, guiX + sidebarW, guiY + guiH - 1, EclipseColors.BORDER);
 
         int catY = contentY + 10;
         int catH = 28;
@@ -183,15 +181,16 @@ public class EclipseClickGui extends Screen {
             boolean isSelected = cat == selectedCategory;
             boolean hovered = mouseX >= guiX + 8 && mouseX <= guiX + sidebarW - 8 && mouseY >= catY && mouseY <= catY + catH;
 
-            int itemBg = isSelected ? 0xCC232536 : (hovered ? 0x661A1B28 : 0x00000000);
-            RenderUtils.drawRoundedRect(context, guiX + 8, catY, sidebarW - 16, catH, 5, itemBg);
-
-            if (isSelected) {
-                // Золотистая вертикальная линия активной вкладки
-                context.fill(guiX + 9, catY + 5, guiX + 11, catY + catH - 5, 0xFFF5A65B);
+            int itemBg = isSelected ? EclipseColors.BG_SIDEBAR_ACTIVE : (hovered ? EclipseColors.BG_HOVER : 0x00000000);
+            if ((itemBg & 0xFF000000) != 0) {
+                context.fill(guiX + 8, catY, guiX + sidebarW - 8, catY + catH, itemBg);
             }
 
-            int textColor = isSelected ? 0xFFFFFFFF : (hovered ? 0xFFE0E2EC : 0xFF8A8E9E);
+            if (isSelected) {
+                context.fill(guiX + 8, catY + 4, guiX + 10, catY + catH - 4, EclipseColors.ACCENT_WHITE);
+            }
+
+            int textColor = (isSelected || hovered) ? EclipseColors.TEXT_PRIMARY : EclipseColors.TEXT_SECONDARY;
             String title = cat.getIcon() + "  " + cat.getDisplayName();
             RenderUtils.drawTextWithShadow(context, tr, Text.literal(title), guiX + 18, catY + 10, textColor);
 
@@ -217,17 +216,16 @@ public class EclipseClickGui extends Screen {
             int cardH = 36;
 
             boolean cardHover = mouseX >= areaX && mouseX <= areaX + areaW && mouseY >= curY && mouseY <= curY + cardH;
-            int cardBg = cardHover ? 0xF0181A26 : 0xD912131C;
-            int cardBorder = m.isEnabled() ? AnimationUtil.lerpColor(0xFF2B2E40, 0xFFF5A65B, anim) : 0xFF1F212E;
+            int cardBg = cardHover ? EclipseColors.BG_HOVER : EclipseColors.BG_CARD;
+            int cardBorder = (m.isEnabled() || cardHover) ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
 
-            // Карточка модуля
-            RenderUtils.drawRoundedRect(context, areaX, curY, areaW, cardH, 6, cardBg);
-            RenderUtils.drawRoundedOutline(context, areaX, curY, areaW, cardH, 6, cardBorder);
+            // Плоская карточка модуля с чёткой 1px рамкой
+            RenderUtils.drawFlatCard(context, areaX, curY, areaW, cardH, cardBg, cardBorder);
 
             // Название и описание модуля
-            int nameCol = m.isEnabled() ? 0xFFFFFFFF : 0xFFB0B4C8;
+            int nameCol = m.isEnabled() ? EclipseColors.TEXT_PRIMARY : EclipseColors.TEXT_VERSION;
             RenderUtils.drawTextWithShadow(context, tr, Text.literal(m.getName()), areaX + 10, curY + 8, nameCol);
-            RenderUtils.drawTextWithShadow(context, tr, Text.literal(m.getDescription()), areaX + 10, curY + 21, 0xFF65697C);
+            RenderUtils.drawTextWithShadow(context, tr, Text.literal(m.getDescription()), areaX + 10, curY + 21, EclipseColors.TEXT_SECONDARY);
 
             // Кнопка бинда клавиши
             int bindW = 42;
@@ -239,22 +237,26 @@ public class EclipseClickGui extends Screen {
             if (bindName == null || bindName.isEmpty()) bindName = "K" + m.getKeybind();
             if (m.getKeybind() == 0) bindName = "-";
 
-            RenderUtils.drawRoundedRect(context, bindX, bindY, bindW, bindH, 3, isListening ? 0xFF6D28D9 : 0x881E202C);
-            RenderUtils.drawCenteredTextWithShadow(context, tr, Text.literal(bindName), bindX + bindW / 2, bindY + 5, isListening ? 0xFFFFFFFF : 0xFF8A8E9E);
+            int bindBg = isListening ? EclipseColors.ACCENT_WHITE : EclipseColors.BG_WINDOW;
+            int bindBorder = isListening ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
+            int bindText = isListening ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_SECONDARY;
+            RenderUtils.drawFlatCard(context, bindX, bindY, bindW, bindH, bindBg, bindBorder);
+            RenderUtils.drawCenteredTextWithShadow(context, tr, Text.literal(bindName), bindX + bindW / 2, bindY + 5, bindText);
 
-            // Переключатель (Toggle Capsule)
+            // Монохромный тумблер
             int toggleW = 30;
             int toggleH = 16;
             int toggleX = areaX + areaW - 38;
             int toggleY = curY + 10;
 
-            int toggleBg = AnimationUtil.lerpColor(0xFF232533, 0xFFF5A65B, anim);
-            RenderUtils.drawPill(context, toggleX, toggleY, toggleW, toggleH, toggleBg, toggleBg);
+            int toggleBg = AnimationUtil.lerpColor(EclipseColors.TRACK_BG, EclipseColors.ACCENT_WHITE, anim);
+            int toggleBorder = AnimationUtil.lerpColor(EclipseColors.BORDER, EclipseColors.BORDER_ACTIVE, anim);
+            RenderUtils.drawFlatCard(context, toggleX, toggleY, toggleW, toggleH, toggleBg, toggleBorder);
 
-            // Ползунок внутри переключателя
             int knobSize = 12;
             int knobX = (int) (toggleX + 2 + anim * (toggleW - knobSize - 4));
-            RenderUtils.drawPill(context, knobX, toggleY + 2, knobSize, knobSize, 0xFFFFFFFF, 0xFFFFFFFF);
+            int knobCol = AnimationUtil.lerpColor(EclipseColors.TEXT_SECONDARY, EclipseColors.TEXT_ON_ACCENT, anim);
+            context.fill(knobX, toggleY + 2, knobX + knobSize, toggleY + 2 + knobSize, knobCol);
 
             curY += cardH + 6;
 
@@ -262,8 +264,7 @@ public class EclipseClickGui extends Screen {
             if (isExpanded && !m.getSettings().isEmpty()) {
                 int settingsPadding = 8;
                 int settingsH = m.getSettings().size() * 26 + settingsPadding;
-                RenderUtils.drawRoundedRect(context, areaX + 10, curY, areaW - 20, settingsH, 4, 0xAA0E0F16);
-                RenderUtils.drawRoundedOutline(context, areaX + 10, curY, areaW - 20, settingsH, 4, 0x44232533);
+                RenderUtils.drawFlatCard(context, areaX + 10, curY, areaW - 20, settingsH, EclipseColors.BG_WINDOW, EclipseColors.BORDER);
 
                 int setY = curY + 6;
                 for (Setting<?> s : m.getSettings()) {
@@ -277,16 +278,19 @@ public class EclipseClickGui extends Screen {
 
     private void renderSetting(DrawContext context, TextRenderer tr, Setting<?> s, int x, int y, int w, int mouseX, int mouseY) {
         if (s instanceof BooleanSetting bs) {
-            RenderUtils.drawTextWithShadow(context, tr, Text.literal(bs.getName()), x, y + 4, 0xFFC0C4D4);
+            RenderUtils.drawTextWithShadow(context, tr, Text.literal(bs.getName()), x, y + 4, EclipseColors.TEXT_PRIMARY);
             int toggleW = 24;
             int toggleH = 13;
             int toggleX = x + w - toggleW;
-            int toggleBg = bs.isEnabled() ? 0xFFF5A65B : 0xFF232533;
-            RenderUtils.drawPill(context, toggleX, y + 2, toggleW, toggleH, toggleBg, toggleBg);
-            int knobX = bs.isEnabled() ? toggleX + toggleW - 11 : toggleX + 2;
-            RenderUtils.drawPill(context, knobX, y + 4, 9, 9, 0xFFFFFFFF, 0xFFFFFFFF);
+            boolean on = bs.isEnabled();
+            int toggleBg = on ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
+            int toggleBorder = on ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
+            RenderUtils.drawFlatCard(context, toggleX, y + 2, toggleW, toggleH, toggleBg, toggleBorder);
+            int knobX = on ? toggleX + toggleW - 11 : toggleX + 2;
+            int knobCol = on ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_SECONDARY;
+            context.fill(knobX, y + 4, knobX + 9, y + 13, knobCol);
         } else if (s instanceof NumberSetting ns) {
-            RenderUtils.drawTextWithShadow(context, tr, Text.literal(ns.getName()), x, y + 4, 0xFFC0C4D4);
+            RenderUtils.drawTextWithShadow(context, tr, Text.literal(ns.getName()), x, y + 4, EclipseColors.TEXT_PRIMARY);
 
             int sliderW = 100;
             int sliderH = 6;
@@ -311,12 +315,13 @@ public class EclipseClickGui extends Screen {
                 }
             }
 
-            RenderUtils.drawPill(context, sliderX, sliderY, sliderW, sliderH, 0xFF1F212E, 0xFF1F212E);
+            RenderUtils.drawFlatCard(context, sliderX, sliderY, sliderW, sliderH, EclipseColors.TRACK_BG, EclipseColors.BORDER);
             int fillW = (int) (sliderW * pct);
             if (fillW > 0) {
-                RenderUtils.drawPill(context, sliderX, sliderY, fillW, sliderH, 0xFFF5A65B, 0xFFF5A65B);
+                context.fill(sliderX, sliderY, sliderX + fillW, sliderY + sliderH, EclipseColors.ACCENT_WHITE);
             }
-            RenderUtils.drawPill(context, sliderX + fillW - 4, sliderY - 2, 10, 10, 0xFFFFFFFF, 0xFFFFFFFF);
+            context.fill(sliderX + fillW - 3, sliderY - 2, sliderX + fillW + 5, sliderY + sliderH + 2, EclipseColors.ACCENT_WHITE);
+            RenderUtils.drawBorder(context, sliderX + fillW - 3, sliderY - 2, 8, sliderH + 4, EclipseColors.BG_WINDOW);
 
             double curVal = ns.getValue();
             if (cachedSliderSetting != ns || Double.compare(cachedSliderValue, curVal) != 0) {
@@ -328,23 +333,21 @@ public class EclipseClickGui extends Screen {
                 cachedSliderText = Text.literal((sign < 0 ? "-" : "") + (abs / 100) + "."
                         + ((abs % 100) < 10 ? "0" : "") + (abs % 100) + ns.getSuffix());
             }
-            RenderUtils.drawTextWithShadow(context, tr, cachedSliderText, sliderX + sliderW + 6, y + 4, 0xFF8A8E9E);
+            RenderUtils.drawTextWithShadow(context, tr, cachedSliderText, sliderX + sliderW + 6, y + 4, EclipseColors.TEXT_SECONDARY);
         } else if (s instanceof ModeSetting ms) {
-            RenderUtils.drawTextWithShadow(context, tr, Text.literal(ms.getName()), x, y + 4, 0xFFC0C4D4);
+            RenderUtils.drawTextWithShadow(context, tr, Text.literal(ms.getName()), x, y + 4, EclipseColors.TEXT_PRIMARY);
 
             int tagW = tr.getWidth(ms.getValue()) + 14;
             int tagH = 16;
             int tagX = x + w - tagW;
-            RenderUtils.drawRoundedRect(context, tagX, y + 2, tagW, tagH, 3, 0xFF1F212E);
-            RenderUtils.drawRoundedOutline(context, tagX, y + 2, tagW, tagH, 3, 0xFF35384B);
-            RenderUtils.drawCenteredTextWithShadow(context, tr, Text.literal(ms.getValue()), tagX + tagW / 2, y + 6, 0xFFF5A65B);
+            RenderUtils.drawFlatCard(context, tagX, y + 2, tagW, tagH, EclipseColors.TRACK_BG, EclipseColors.BORDER);
+            RenderUtils.drawCenteredTextWithShadow(context, tr, Text.literal(ms.getValue()), tagX + tagW / 2, y + 6, EclipseColors.TEXT_PRIMARY);
         } else if (s instanceof ColorSetting cs) {
-            RenderUtils.drawTextWithShadow(context, tr, Text.literal(cs.getName()), x, y + 4, 0xFFC0C4D4);
+            RenderUtils.drawTextWithShadow(context, tr, Text.literal(cs.getName()), x, y + 4, EclipseColors.TEXT_PRIMARY);
             int boxSize = 14;
             int boxX = x + w - boxSize;
             int boxY = y + 3;
-            RenderUtils.drawRoundedRect(context, boxX, boxY, boxSize, boxSize, 3, cs.getColor());
-            RenderUtils.drawRoundedOutline(context, boxX, boxY, boxSize, boxSize, 3, 0xFFFFFFFF);
+            RenderUtils.drawFlatCard(context, boxX, boxY, boxSize, boxSize, cs.getColor(), EclipseColors.BORDER_ACTIVE);
         }
     }
 
@@ -455,7 +458,7 @@ public class EclipseClickGui extends Screen {
                             }
                         } else if (s instanceof ColorSetting cs) {
                             if (mouseX >= areaX + 20 && mouseX <= areaX + areaW - 20 && mouseY >= setY && mouseY <= setY + 20) {
-                                int[] palette = {0xFFFFFFFF, 0xFFF5A65B, 0xFF6D28D9, 0xFF06B6D4, 0xFF10B981, 0xFFFF2A55};
+                                int[] palette = {0xFFF4F4F5, 0xFFD4D4D8, 0xFFA1A1AA, 0xFF71717A, 0xFF24242A, 0xFF09090B};
                                 int cur = cs.getColor();
                                 int nextIdx = 0;
                                 for (int idx = 0; idx < palette.length; idx++) {

@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ru.example.donorprefix.gui.EclipseColors;
 
 @Mixin(EntryListWidget.class)
 public abstract class EntryListWidgetMixin extends ContainerWidget {
@@ -19,13 +20,13 @@ public abstract class EntryListWidgetMixin extends ContainerWidget {
     @Inject(method = "drawMenuListBackground", at = @At("HEAD"), cancellable = true)
     private void onDrawMenuListBackground(DrawContext context, CallbackInfo ci) {
         ci.cancel();
-        context.fill(this.getX(), this.getY(), this.getRight(), this.getBottom(), 0x900B0B10);
+        context.fill(this.getX(), this.getY(), this.getRight(), this.getBottom(), EclipseColors.BG_HUD);
     }
 
     @Inject(method = "drawHeaderAndFooterSeparators", at = @At("HEAD"), cancellable = true)
     private void onDrawSeparators(DrawContext context, CallbackInfo ci) {
         ci.cancel();
-        context.fill(this.getX(), this.getY() - 1, this.getRight(), this.getY(), 0xFF232533);
-        context.fill(this.getX(), this.getBottom(), this.getRight(), this.getBottom() + 1, 0xFF232533);
+        context.fill(this.getX(), this.getY() - 1, this.getRight(), this.getY(), EclipseColors.BORDER);
+        context.fill(this.getX(), this.getBottom(), this.getRight(), this.getBottom() + 1, EclipseColors.BORDER);
     }
 }

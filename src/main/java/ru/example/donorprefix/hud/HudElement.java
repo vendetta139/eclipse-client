@@ -4,6 +4,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.math.MathHelper;
 import org.joml.Matrix3x2fStack;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 
 /**
@@ -73,14 +74,16 @@ public abstract class HudElement {
             // 3. Рисуем сам элемент в локальных координатах (0, 0 .. width, height)
             this.renderContent(context);
 
-            // 4. Если открыт HUD Редактор — рисуем рамку и подпись ЗДЕСЬ ЖЕ в (0, 0 .. width, height)!
+            // 4. Если открыт HUD Редактор — рисуем 1px монохромную рамку и подпись
             if (isEditor) {
-                int borderColor = isSelected ? 0xFFF5A65B : (isHovered ? 0xFF6A67CE : (this.enabled ? 0x80383A52 : 0x80702020));
+                int borderColor = isSelected ? EclipseColors.TEXT_PRIMARY
+                        : (isHovered ? EclipseColors.BORDER_ACTIVE : (this.enabled ? EclipseColors.BORDER : EclipseColors.TEXT_DISABLED));
                 RenderUtils.drawBorder(context, 0, 0, this.width, this.height, borderColor);
                 String label = getEditorLabel();
                 MinecraftClient mc = MinecraftClient.getInstance();
                 if (mc != null && mc.textRenderer != null) {
-                    context.drawTextWithShadow(mc.textRenderer, label, 0, -11, this.enabled ? 0xFFEAECEF : 0xFFAAAAAA);
+                    context.drawTextWithShadow(mc.textRenderer, label, 0, -11,
+                            this.enabled ? EclipseColors.TEXT_PRIMARY : EclipseColors.TEXT_SECONDARY);
                 }
             }
         } finally {

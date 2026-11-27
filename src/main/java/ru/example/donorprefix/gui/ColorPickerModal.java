@@ -98,18 +98,16 @@ public class ColorPickerModal {
     public void render(DrawContext context, MinecraftClient client, int mouseX, int mouseY) {
         if (!visible || context == null) return;
         try {
-            // 1. Тень и фоновое стекло
-            RenderUtils.drawSoftGlow(context, x, y, width, height, 10, 4, 0x55000000);
-            RenderUtils.drawRoundedRect(context, x, y, width, height, 10, 0xF20B0B10);
-            RenderUtils.drawRoundedOutline(context, x, y, width, height, 10, 0xFF232533);
-
+            // 1. Плоская подложка #09090B и тонкая 1px рамка #24242A
+            RenderUtils.drawFlatCard(context, x, y, width, height, EclipseColors.BG_WINDOW_TRANSLUCENT, EclipseColors.BORDER);
 
             // 2. Заголовок и кнопка закрытия [✕]
-            RenderUtils.drawTextWithShadow(context, client.textRenderer, Text.literal(title).formatted(Formatting.BOLD, Formatting.WHITE), x + 10, y + 8, 0xF8FAFC);
+            RenderUtils.drawTextWithShadow(context, client.textRenderer, Text.literal(title).formatted(Formatting.BOLD), x + 10, y + 8, EclipseColors.TEXT_PRIMARY);
             int closeBtnX = x + width - 18;
             int closeBtnY = y + 7;
             boolean closeHovered = mouseX >= closeBtnX && mouseX <= closeBtnX + 12 && mouseY >= closeBtnY && mouseY <= closeBtnY + 12;
-            RenderUtils.drawTextWithShadow(context, client.textRenderer, Text.literal("✕"), closeBtnX, closeBtnY, closeHovered ? 0xFFEF4444 : 0xFF94A3B8);
+            RenderUtils.drawTextWithShadow(context, client.textRenderer, Text.literal("✕"), closeBtnX, closeBtnY,
+                    closeHovered ? EclipseColors.TEXT_PRIMARY : EclipseColors.TEXT_SECONDARY);
 
         int curY = y + 23;
         int innerW = width - 20;
@@ -160,43 +158,41 @@ public class ColorPickerModal {
         int dotsStartX = innerX;
         for (int pCol : PRESETS) {
             boolean active = !rainbow && ((currentRgb & 0x00FFFFFF) == (pCol & 0x00FFFFFF));
-            RenderUtils.drawRoundedRect(context, dotsStartX, curY, dotSize, dotSize, dotSize / 2, pCol);
-            RenderUtils.drawRoundedOutline(context, dotsStartX, curY, dotSize, dotSize, dotSize / 2, active ? 0xFFFFFFFF : 0x44000000);
-            if (active) {
-                RenderUtils.drawSoftGlow(context, dotsStartX, curY, dotSize, dotSize, dotSize / 2, 2, pCol);
-            }
+            RenderUtils.drawFlatCard(context, dotsStartX, curY, dotSize, dotSize, pCol,
+                    active ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER);
             dotsStartX += dotSize + dotSpacing;
         }
 
-        // Кнопка [🌈 Радуга]
+        // Кнопка [Радуга]
         int rainbowBtnW = 44;
         int rainbowBtnX = innerX + innerW - rainbowBtnW;
-        int rainbowBg = rainbow ? 0xFF6A67CE : 0x33101118;
-        RenderUtils.drawPill(context, rainbowBtnX, curY, rainbowBtnW, dotSize + 1, rainbowBg, rainbow ? 0xFFF5A65B : 0x44475569);
-        RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, Text.literal("Радуга"), rainbowBtnX + rainbowBtnW / 2, curY + 2, rainbow ? 0xFFFFFFFF : 0xFF94A3B8);
+        int rainbowBg = rainbow ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
+        int rainbowBorder = rainbow ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
+        RenderUtils.drawFlatCard(context, rainbowBtnX, curY, rainbowBtnW, dotSize + 1, rainbowBg, rainbowBorder);
+        RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, Text.literal("Радуга"), rainbowBtnX + rainbowBtnW / 2, curY + 3,
+                rainbow ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_SECONDARY);
 
         curY += dotSize + 8;
 
         // 7. Нижняя плашка: Превью цвета + Hex код + Кнопка Готово
         int previewSize = 16;
-        int effectiveRgb = rainbow ? RenderUtils.lerpColor(0xFFFF0055, 0xFF6A67CE, (float) ((System.currentTimeMillis() % 2000L) / 2000.0)) : currentRgb;
+        int effectiveRgb = rainbow ? RenderUtils.lerpColor(0xFFFFFFFF, 0xFF71717A, (float) ((System.currentTimeMillis() % 2000L) / 2000.0)) : currentRgb;
         int previewCol = ((int) (alpha * 255f) << 24) | (effectiveRgb & 0x00FFFFFF);
 
-        RenderUtils.drawRoundedRect(context, innerX, curY, previewSize, previewSize, 4, previewCol);
-        RenderUtils.drawRoundedOutline(context, innerX, curY, previewSize, previewSize, 4, 0x66FFFFFF);
+        RenderUtils.drawFlatCard(context, innerX, curY, previewSize, previewSize, previewCol, EclipseColors.BORDER);
 
         String hexText = String.format("#%06X", effectiveRgb & 0x00FFFFFF);
         if (hasAlpha) {
             hexText = String.format("#%02X%06X", (int) (alpha * 255f), effectiveRgb & 0x00FFFFFF);
         }
-        RenderUtils.drawTextWithShadow(context, client.textRenderer, Text.literal(hexText), innerX + previewSize + 6, curY + 4, 0xFFEAECEF);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, Text.literal(hexText), innerX + previewSize + 6, curY + 4, EclipseColors.TEXT_PRIMARY);
 
         // Кнопка [Готово]
         int doneBtnW = 48;
         int doneBtnH = 16;
         int doneBtnX = innerX + innerW - doneBtnW;
-        RenderUtils.drawPill(context, doneBtnX, curY, doneBtnW, doneBtnH, 0xFF161824, 0xFF6A67CE);
-        RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, Text.literal("Готово"), doneBtnX + doneBtnW / 2, curY + 4, 0xFFFFFFFF);
+        RenderUtils.drawFlatCard(context, doneBtnX, curY, doneBtnW, doneBtnH, EclipseColors.ACCENT_WHITE, EclipseColors.BORDER_ACTIVE);
+        RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, Text.literal("Готово"), doneBtnX + doneBtnW / 2, curY + 4, EclipseColors.TEXT_ON_ACCENT);
         } catch (Throwable ignored) {}
     }
 

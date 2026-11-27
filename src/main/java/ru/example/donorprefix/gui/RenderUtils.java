@@ -280,23 +280,20 @@ public class RenderUtils {
     }
 
     /**
-     * Отрисовка мягкого внешнего свечения (Drop Shadow / Outer Glow).
+     * Цветные внешние свечения отключены для строгого плоского монохромного стиля.
      */
     public static void drawSoftGlow(DrawContext context, int x, int y, int width, int height, int radius, int glowRadius, int glowColor) {
-        if (glowRadius <= 0) return;
-        int baseAlpha = (glowColor >> 24) & 0xFF;
-        if (baseAlpha <= 0) return;
+        // No-op in monochrome flat UI
+    }
 
-        int stepAlpha1 = (int) (baseAlpha * 0.35f);
-        int stepAlpha2 = (int) (baseAlpha * 0.15f);
-
-        if (stepAlpha1 > 0) {
-            int col1 = (stepAlpha1 << 24) | (glowColor & 0x00FFFFFF);
-            drawRoundedOutline(context, x - 1, y - 1, width + 2, height + 2, radius + 1, col1);
-        }
-        if (stepAlpha2 > 0) {
-            int col2 = (stepAlpha2 << 24) | (glowColor & 0x00FFFFFF);
-            drawRoundedOutline(context, x - 2, y - 2, width + 4, height + 4, radius + 2, col2);
+    /**
+     * Плоская карточка с чёткой 1px рамкой через 4 context.fill.
+     */
+    public static void drawFlatCard(DrawContext context, int x, int y, int width, int height, int bgColor, int borderColor) {
+        if (context == null || width <= 0 || height <= 0) return;
+        context.fill(x, y, x + width, y + height, bgColor);
+        if ((borderColor & 0xFF000000) != 0) {
+            drawBorder(context, x, y, width, height, borderColor);
         }
     }
 
@@ -426,14 +423,7 @@ public class RenderUtils {
     }
 
     public static void drawCyberCard(DrawContext context, int x, int y, int width, int height, int radius, int bgColor, int borderColor, int glowColor) {
-        if (width <= 0 || height <= 0) return;
-        if ((glowColor & 0xFF000000) != 0) {
-            drawSoftGlow(context, x, y, width, height, radius, 3, glowColor);
-        }
-        drawRoundedRect(context, x, y, width, height, radius, bgColor);
-        if ((borderColor & 0xFF000000) != 0) {
-            drawRoundedOutline(context, x, y, width, height, radius, borderColor);
-        }
+        drawFlatCard(context, x, y, width, height, bgColor, borderColor);
     }
 
     public static void drawSlider(DrawContext context, int x, int y, int width, int height, float value, int trackColor, int activeStart, int activeEnd, int knobBorder) {
@@ -441,41 +431,32 @@ public class RenderUtils {
         int trackHeight = Math.max(4, height / 3);
         int trackY = y + (height - trackHeight) / 2;
 
-        // Фон дорожки (#1A1B26)
-        drawRoundedRect(context, x, trackY, width, trackHeight, trackHeight / 2, EclipseTheme.TRACK_BG);
-        drawRoundedOutline(context, x, trackY, width, trackHeight, trackHeight / 2, EclipseTheme.PANEL_BORDER);
+        // Тёмная направляющая (#1E1E24) + тонкая рамка (#24242A)
+        context.fill(x, trackY, x + width, trackY + trackHeight, EclipseColors.TRACK_BG);
+        drawBorder(context, x, trackY, width, trackHeight, EclipseColors.BORDER);
 
-        // Заполненная часть с плавным градиентом от золотого к индиго
+        // Заполненная часть — чистый белый (#F4F4F5)
         int fillWidth = (int) (width * value);
-        if (fillWidth > 2) {
-            drawGradientLineH(context, x, trackY, fillWidth, trackHeight, EclipseTheme.ACCENT_GOLD, EclipseTheme.ACCENT_INDIGO);
-            drawSoftGlow(context, x, trackY, fillWidth, trackHeight, trackHeight / 2, 2, multiplyAlpha(EclipseTheme.ACCENT_INDIGO, 0.45f));
+        if (fillWidth > 0) {
+            context.fill(x, trackY, x + fillWidth, trackY + trackHeight, EclipseColors.ACCENT_WHITE);
         }
 
-        // Ползунок (ручка) со свечением
+        // Ползунок — чистый белый (#F4F4F5) с тёмной рамкой (#09090B)
         int knobSize = height;
         int knobX = (int) (x + (width - knobSize) * value);
-        drawRoundedRect(context, knobX, y, knobSize, knobSize, knobSize / 2, 0xFFFFFFFF);
-        drawRoundedOutline(context, knobX, y, knobSize, knobSize, knobSize / 2, knobBorder);
-        drawSoftGlow(context, knobX, y, knobSize, knobSize, knobSize / 2, 2, 0x55F5A65B);
+        context.fill(knobX, y, knobX + knobSize, y + knobSize, EclipseColors.ACCENT_WHITE);
+        drawBorder(context, knobX, y, knobSize, knobSize, EclipseColors.BG_WINDOW);
     }
 
     public static void drawToggleSwitch(DrawContext context, int x, int y, int width, int height, boolean active, float animProgress) {
         animProgress = MathHelper.clamp(animProgress, 0f, 1f);
-        int radius = height / 2;
 
-        int offBg = EclipseTheme.PANEL_BORDER; // #232533
-        int onBg = EclipseTheme.ACCENT_GOLD;   // #F5A65B
-        int currentBg = AnimationUtil.lerpColor(offBg, onBg, animProgress);
-        int currentBorder = AnimationUtil.lerpColor(0xFF161824, EclipseTheme.ACCENT_GOLD, animProgress);
+        int trackColor = lerpColor(EclipseColors.TRACK_BG, EclipseColors.ACCENT_WHITE, animProgress);
+        int borderColor = lerpColor(EclipseColors.BORDER, EclipseColors.BORDER_ACTIVE, animProgress);
 
-        drawPill(context, x, y, width, height, currentBg, currentBorder);
+        context.fill(x, y, x + width, y + height, trackColor);
+        drawBorder(context, x, y, width, height, borderColor);
 
-        if (animProgress > 0.05f) {
-            drawSoftGlow(context, x, y, width, height, radius, 3, multiplyAlpha(EclipseTheme.ACCENT_GOLD, animProgress * 0.5f));
-        }
-
-        // Ползунок скользит через easeOutQuart для маслянистой плавности
         float easedProgress = AnimationUtil.easeOutQuart(animProgress);
         int knobDiameter = height - 4;
         int minKnobX = x + 2;
@@ -483,9 +464,9 @@ public class RenderUtils {
         int knobX = Math.round(minKnobX + (maxKnobX - minKnobX) * easedProgress);
         int knobY = y + 2;
 
-        int knobColor = AnimationUtil.lerpColor(0xFF7D8296, 0xFFFFFFFF, animProgress);
-        drawRoundedRect(context, knobX, knobY, knobDiameter, knobDiameter, knobDiameter / 2, knobColor);
-        drawRoundedOutline(context, knobX, knobY, knobDiameter, knobDiameter, knobDiameter / 2, 0x44000000);
+        // Выключен — серый ползунок #71717A; включён — чёрный ползунок #09090B
+        int knobColor = lerpColor(EclipseColors.TEXT_SECONDARY, EclipseColors.TEXT_ON_ACCENT, animProgress);
+        context.fill(knobX, knobY, knobX + knobDiameter, knobY + knobDiameter, knobColor);
     }
 }
 

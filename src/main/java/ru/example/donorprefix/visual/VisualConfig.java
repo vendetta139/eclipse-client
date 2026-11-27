@@ -21,18 +21,18 @@ public class VisualConfig {
     private static final Path LEGACY_PATH = FabricLoader.getInstance().getConfigDir().resolve("donor-prefix-visuals.json");
     private static VisualConfig INSTANCE;
 
-    // --- 0. Общие настройки и цветовая тема UI ---
+    // --- 0. Общие настройки и монохромная тема UI ---
     public boolean checkUpdates = true;
     public boolean betaChannel = false;
-    public int themePreset = 0; // 0: Space Eclipse, 1: Evo Midnight, 2: Cyan, 3: Emerald, 4: Crimson
-    public int themePrimaryColor = 0xFFF5A65B;
-    public int themeSecondaryColor = 0xFF6A67CE;
-    public int themeBgColor = 0xF20B0B10;
-    public int themeCardColor = 0xFF101118;
-    public int themeOutlineColor = 0xFF232533;
-    public int themeGlowColor = 0x2A6A67CE;
-    public int themeTextColor = 0xFFEAECEF;
-    public int themeSubtextColor = 0xFF7D8296;
+    public int themePreset = 0; // 0: Obsidian, 1: Ghost, 2: Inverted
+    public int themePrimaryColor = 0xFFF4F4F5;
+    public int themeSecondaryColor = 0xFF71717A;
+    public int themeBgColor = 0xB809090B;
+    public int themeCardColor = 0xFF121215;
+    public int themeOutlineColor = 0xFF24242A;
+    public int themeGlowColor = 0x00000000;
+    public int themeTextColor = 0xFFF4F4F5;
+    public int themeSubtextColor = 0xFF8E8E93;
 
     // --- 1. HUD и оверлеи ---
     public boolean hudSnapping = true;
@@ -135,57 +135,38 @@ public class VisualConfig {
     }
 
     public void applyThemePreset(int preset) {
+        if (preset < 0 || preset > 2) preset = 0;
         this.themePreset = preset;
         switch (preset) {
-            case 0 -> {
-                themePrimaryColor = 0xFFF5A65B;
-                themeSecondaryColor = 0xFF6A67CE;
-                themeBgColor = 0xF20B0B10;
-                themeCardColor = 0xFF101118;
-                themeOutlineColor = 0xFF232533;
-                themeGlowColor = 0x2A6A67CE;
-                themeTextColor = 0xFFEAECEF;
-                themeSubtextColor = 0xFF7D8296;
+            case 0 -> { // Obsidian: глубокий графитовый тёмный монохром
+                themePrimaryColor = 0xFFF4F4F5;
+                themeSecondaryColor = 0xFF71717A;
+                themeBgColor = 0xB809090B;
+                themeCardColor = 0xFF121215;
+                themeOutlineColor = 0xFF24242A;
+                themeGlowColor = 0x00000000;
+                themeTextColor = 0xFFF4F4F5;
+                themeSubtextColor = 0xFF8E8E93;
             }
-            case 1 -> {
-                themePrimaryColor = 0xFF8B5CF6;
-                themeSecondaryColor = 0xFF06B6D4;
-                themeBgColor = 0xF2090D16;
-                themeCardColor = 0x2A151F33;
-                themeOutlineColor = 0x4D8B5CF6;
-                themeGlowColor = 0x338B5CF6;
-                themeTextColor = 0xFFF8FAFC;
-                themeSubtextColor = 0xFF94A3B8;
+            case 1 -> { // Ghost: более прозрачный стеклянный ч/б
+                themePrimaryColor = 0xFFE4E4E7;
+                themeSecondaryColor = 0xFF8E8E93;
+                themeBgColor = 0x7009090B;
+                themeCardColor = 0x99121215;
+                themeOutlineColor = 0x9924242A;
+                themeGlowColor = 0x00000000;
+                themeTextColor = 0xFFF4F4F5;
+                themeSubtextColor = 0xFFA1A1AA;
             }
-            case 2 -> {
-                themePrimaryColor = 0xFF00E5FF;
-                themeSecondaryColor = 0xFF38BDF8;
-                themeBgColor = 0xF2030E17;
-                themeCardColor = 0x2A061C2C;
-                themeOutlineColor = 0x5500E5FF;
-                themeGlowColor = 0x4400E5FF;
-                themeTextColor = 0xFFF8FAFC;
-                themeSubtextColor = 0xFF94A3B8;
-            }
-            case 3 -> {
-                themePrimaryColor = 0xFF10B981;
-                themeSecondaryColor = 0xFF34D399;
-                themeBgColor = 0xF204140E;
-                themeCardColor = 0x2A08261B;
-                themeOutlineColor = 0x5510B981;
-                themeGlowColor = 0x4410B981;
-                themeTextColor = 0xFFF8FAFC;
-                themeSubtextColor = 0xFF94A3B8;
-            }
-            case 4 -> {
-                themePrimaryColor = 0xFFFF1744;
-                themeSecondaryColor = 0xFFFF5252;
-                themeBgColor = 0xF20B0205;
-                themeCardColor = 0x2A28050B;
-                themeOutlineColor = 0x66FF1744;
-                themeGlowColor = 0x44FF1744;
-                themeTextColor = 0xFFF8FAFC;
-                themeSubtextColor = 0xFF94A3B8;
+            case 2 -> { // Inverted: светлая ч/б тема
+                themePrimaryColor = 0xFF09090B;
+                themeSecondaryColor = 0xFF52525B;
+                themeBgColor = 0xDCF4F4F5;
+                themeCardColor = 0xFFE4E4E7;
+                themeOutlineColor = 0xFFD4D4D8;
+                themeGlowColor = 0x00000000;
+                themeTextColor = 0xFF09090B;
+                themeSubtextColor = 0xFF52525B;
             }
             default -> {}
         }
@@ -201,6 +182,18 @@ public class VisualConfig {
     }
 
     public void validateScales() {
+        // Автомиграция старых цветных пресетов на строгий монохром
+        if (themePrimaryColor == 0xFFF5A65B || themeGlowColor == 0x2A6A67CE || themePreset > 2 || themePreset < 0) {
+            themePreset = 0;
+            themePrimaryColor = 0xFFF4F4F5;
+            themeSecondaryColor = 0xFF71717A;
+            themeBgColor = 0xB809090B;
+            themeCardColor = 0xFF121215;
+            themeOutlineColor = 0xFF24242A;
+            themeGlowColor = 0x00000000;
+            themeTextColor = 0xFFF4F4F5;
+            themeSubtextColor = 0xFF8E8E93;
+        }
         if (watermarkScale <= 0.1f || Float.isNaN(watermarkScale)) watermarkScale = 1.0f;
         if (fpsHudScale <= 0.1f || Float.isNaN(fpsHudScale)) fpsHudScale = 1.0f;
         if (cpsCounterScale <= 0.1f || Float.isNaN(cpsCounterScale)) cpsCounterScale = 1.0f;

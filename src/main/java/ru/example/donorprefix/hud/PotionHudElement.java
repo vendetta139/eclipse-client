@@ -6,6 +6,7 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 import ru.example.donorprefix.visual.VisualConfig;
 
@@ -91,13 +92,13 @@ public class PotionHudElement extends HudElement {
     }
 
     private void drawPotionBadge(DrawContext context, MinecraftClient client, VisualConfig cfg, int x, int y, Text name, Text duration, int effectColor) {
-        int glowColor = (0x66 << 24) | (effectColor & 0x00FFFFFF);
+        int bg = cfg.themePreset == 2 ? cfg.themeBgColor : EclipseColors.BG_HUD;
+        int border = cfg.themePreset == 2 ? cfg.themeOutlineColor : EclipseColors.BORDER;
+        RenderUtils.drawFlatCard(context, x, y, BOX_WIDTH, ITEM_HEIGHT, bg, border);
+        context.fill(x + 7, y + 7, x + 13, y + 13, EclipseColors.ACCENT_WHITE);
 
-        RenderUtils.drawPill(context, x, y, BOX_WIDTH, ITEM_HEIGHT, cfg.themeBgColor, glowColor);
-        RenderUtils.drawRoundedRect(context, x + 6, y + 6, 8, 8, 4, (0xFF << 24) | (effectColor & 0x00FFFFFF));
-
-        RenderUtils.drawTextWithShadow(context, client.textRenderer, name, x + 18, y + 3, cfg.themeTextColor);
-        RenderUtils.drawTextWithShadow(context, client.textRenderer, duration, x + 18, y + 11, cfg.themeSubtextColor);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, name, x + 18, y + 3, EclipseColors.TEXT_PRIMARY);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, duration, x + 18, y + 11, EclipseColors.TEXT_MUTED_HUD);
     }
 
     @Override

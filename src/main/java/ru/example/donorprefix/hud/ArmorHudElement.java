@@ -6,6 +6,7 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.math.MathHelper;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 import ru.example.donorprefix.visual.VisualConfig;
 
@@ -46,9 +47,10 @@ public class ArmorHudElement extends HudElement {
         MinecraftClient client = MinecraftClient.getInstance();
         VisualConfig cfg = VisualConfig.getInstance();
 
-        // 1. Отрисовка подложки СТРОГО в локальных координатах (0, 0 .. width, height)
-        RenderUtils.drawRoundedRect(context, 0, 0, this.width, this.height, 8, cfg.themeBgColor);
-        RenderUtils.drawRoundedOutline(context, 0, 0, this.width, this.height, 8, cfg.themeOutlineColor);
+        // 1. Плоская монохромная подложка 0xB809090B и рамка 0xFF24242A
+        int bg = cfg.themePreset == 2 ? cfg.themeBgColor : EclipseColors.BG_HUD;
+        int border = cfg.themePreset == 2 ? cfg.themeOutlineColor : EclipseColors.BORDER;
+        RenderUtils.drawFlatCard(context, 0, 0, this.width, this.height, bg, border);
 
         // 2. Получение экипированных предметов без аллокаций коллекций/ItemStack
         ItemStack[] renderStacks = PREVIEW_ARMOR;
@@ -83,18 +85,16 @@ public class ArmorHudElement extends HudElement {
                     int barX = 24;
                     int barY = curY + 11;
 
-                    int barColor = ratio > 0.5f
-                            ? RenderUtils.lerpColor(0xFFEAB308, 0xFF10B981, (ratio - 0.5f) * 2f)
-                            : RenderUtils.lerpColor(0xFFEF4444, 0xFFEAB308, ratio * 2f);
+                    int barColor = ratio > 0.25f ? EclipseColors.ACCENT_WHITE : EclipseColors.TEXT_MUTED_HUD;
 
-                    context.fill(barX, barY, barX + barW, barY + barH, 0x66000000);
+                    context.fill(barX, barY, barX + barW, barY + barH, EclipseColors.TRACK_BG);
                     context.fill(barX, barY, barX + (int) (barW * ratio), barY + barH, barColor);
 
                     if (lastValue[i] != curDmg) {
                         lastValue[i] = curDmg;
                         cachedValueStr[i] = Integer.toString(curDmg);
                     }
-                    RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedValueStr[i], barX, curY + 2, cfg.themeTextColor);
+                    RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedValueStr[i], barX, curY + 2, EclipseColors.TEXT_PRIMARY);
                 } else {
                     int count = stack.getCount();
                     if (count > 1) {
@@ -103,9 +103,9 @@ public class ArmorHudElement extends HudElement {
                             lastValue[i] = key;
                             cachedValueStr[i] = "x" + count;
                         }
-                        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedValueStr[i], 24, curY + 5, cfg.themeSubtextColor);
+                        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedValueStr[i], 24, curY + 5, EclipseColors.TEXT_MUTED_HUD);
                     } else {
-                        RenderUtils.drawTextWithShadow(context, client.textRenderer, "100%", 24, curY + 5, cfg.themeTextColor);
+                        RenderUtils.drawTextWithShadow(context, client.textRenderer, "100%", 24, curY + 5, EclipseColors.TEXT_MUTED_HUD);
                     }
                 }
             }

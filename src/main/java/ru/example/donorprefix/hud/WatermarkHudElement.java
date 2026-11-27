@@ -3,22 +3,25 @@ package ru.example.donorprefix.hud;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.network.PlayerListEntry;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 import ru.example.donorprefix.visual.VisualConfig;
 
 /**
- * HUD-виджет Watermark:
- * Отображает название клиента, текущий FPS и пинг соединения.
+ * HUD-виджет Watermark в строгом монохромном стиле.
  */
 public class WatermarkHudElement extends HudElement {
 
+    private static final String TITLE = "ECLIPSE";
+
     private int lastFps = Integer.MIN_VALUE;
     private int lastPing = Integer.MIN_VALUE;
-    private String cachedText = "";
-    private int cachedWidth = 160;
+    private int cachedTitleW = -1;
+    private String cachedMeta = "  |  0 FPS  |  0ms";
+    private int cachedTotalW = 150;
 
     public WatermarkHudElement() {
-        super("watermark", "Watermark", 160, 18);
+        super("watermark", "Watermark", 150, 18);
     }
 
     @Override
@@ -35,19 +38,26 @@ public class WatermarkHudElement extends HudElement {
             }
         }
 
+        if (cachedTitleW < 0) {
+            cachedTitleW = client.textRenderer.getWidth(TITLE);
+        }
         if (fps != lastFps || ping != lastPing) {
             lastFps = fps;
             lastPing = ping;
-            cachedText = "✦ ECLIPSE  │  " + fps + " FPS  │  " + ping + "ms";
-            cachedWidth = client.textRenderer.getWidth(cachedText) + 16;
+            cachedMeta = "  |  " + fps + " FPS  |  " + ping + "ms";
+            cachedTotalW = cachedTitleW + client.textRenderer.getWidth(cachedMeta) + 16;
         }
-        this.width = cachedWidth;
+        this.width = cachedTotalW;
         this.height = 18;
 
-        // Отрисовка СТРОГО от (0, 0)
-        RenderUtils.drawSoftGlow(context, 0, 0, this.width, this.height, 8, 2, cfg.themeGlowColor);
-        RenderUtils.drawPill(context, 0, 0, this.width, this.height, cfg.themeBgColor, cfg.themeOutlineColor);
-        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedText, 8, 5, cfg.themeTextColor);
+        int bg = cfg.themePreset == 2 ? cfg.themeBgColor : EclipseColors.BG_HUD;
+        int border = cfg.themePreset == 2 ? cfg.themeOutlineColor : EclipseColors.BORDER;
+        int titleCol = cfg.themePreset == 2 ? cfg.themeTextColor : EclipseColors.TEXT_PRIMARY;
+        int metaCol = cfg.themePreset == 2 ? cfg.themeSubtextColor : EclipseColors.TEXT_MUTED_HUD;
+
+        RenderUtils.drawFlatCard(context, 0, 0, this.width, this.height, bg, border);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, TITLE, 8, 5, titleCol);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedMeta, 8 + cachedTitleW, 5, metaCol);
     }
 
     @Override

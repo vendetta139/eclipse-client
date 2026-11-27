@@ -15,16 +15,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.example.donorprefix.gui.AnimationUtil;
-import ru.example.donorprefix.gui.EclipseTheme;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 
 /**
- * ✦ PressableWidgetMixin — Флагманский дизайн кнопок ECLIPSE CLIENT 1.21.11:
- * - Глубокий темный матовый обсидиан (#0B0B10 / #12131C)
- * - Плавная градиентная обводка (золото #F5A65B -> индиго #6D28D9)
- * - Тактильное упругое сжатие при клике (LabyMod-style press squish) через Matrix3x2fStack
- * - Интерактивная неоновая расходящаяся волна (Click Ripple)
- * - Микро-сдвиг текста вверх при наведении и мягкое неоновое свечение
+ * PressableWidgetMixin — Строгий монохромный стиль кнопок ECLIPSE 1.21.11.
  */
 @Mixin(PressableWidget.class)
 public abstract class PressableWidgetMixin extends ClickableWidget {
@@ -75,7 +70,6 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
         boolean hovered = this.isHovered();
         eclipseHoverAnim = AnimationUtil.deltaLerp(eclipseHoverAnim, hovered ? 1.0f : 0.0f, 14.0f, deltaSec);
 
-        // Определение физического нажатия ЛКМ на кнопку
         long windowHandle = mc.getWindow().getHandle();
         boolean isMouseDown = GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
         boolean isPressed = hovered && isMouseDown && this.active;
@@ -97,7 +91,6 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
         boolean isEclipseBtn = this.getMessage().getString().contains("ECLIPSE");
         boolean isFooterBtn = mc.currentScreen != null && y >= mc.currentScreen.height - 35;
 
-        // 1. Применяем тактильное упругое сжатие при клике через нативный Matrix3x2fStack 1.21.11
         boolean applyPressScale = eclipsePressAnim > 0.002f;
         Matrix3x2fStack matrices = context.getMatrices();
         if (applyPressScale && matrices != null) {
@@ -110,13 +103,11 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
 
         try {
             if (isFooterBtn) {
-                // Компактные нижние кнопки Главного меню
-                int bgCol = hovered ? 0xE6191B28 : 0xCC12131C;
-                RenderUtils.drawRoundedRect(context, x, y, w, h, 4, bgCol);
-                int borderCol = hovered ? EclipseTheme.ACCENT_GOLD : 0x88232533;
-                RenderUtils.drawRoundedOutline(context, x, y, w, h, 4, borderCol);
+                int bgCol = hovered ? EclipseColors.BG_HOVER : EclipseColors.BG_CARD;
+                int borderCol = hovered ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
+                RenderUtils.drawFlatCard(context, x, y, w, h, bgCol, borderCol);
 
-                int textColor = hovered ? 0xFFFFFFFF : 0xFFB0B4C8;
+                int textColor = hovered ? EclipseColors.TEXT_PRIMARY : EclipseColors.TEXT_SECONDARY;
                 TextRenderer tr = mc.textRenderer;
                 if (tr != null) {
                     RenderUtils.drawCenteredTextWithShadow(context, tr, this.getMessage(), x + w / 2, y + (h - 8) / 2, textColor);
@@ -129,43 +120,25 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
             int textColor;
 
             if (!this.active) {
-                // Приглушенный стиль неактивной кнопки: фон #0D0E14, рамка #1A1B24, текст #4A4E60
-                bgCol = 0x990D0E14;
-                borderCol = 0x881A1B24;
-                textColor = 0xFF4A4E60;
-                RenderUtils.drawRoundedRect(context, x, y, w, h, 5, bgCol);
-                RenderUtils.drawRoundedOutline(context, x, y, w, h, 5, borderCol);
+                bgCol = EclipseColors.BG_WINDOW;
+                borderCol = EclipseColors.BORDER;
+                textColor = EclipseColors.TEXT_DISABLED;
+                RenderUtils.drawFlatCard(context, x, y, w, h, bgCol, borderCol);
             } else {
-                // 1. Плавный цвет фона (от глубокого #12131C к более светлому #191B28)
-                bgCol = AnimationUtil.lerpColor(0xE612131C, 0xF5191B28, eclipseHoverAnim);
-                RenderUtils.drawRoundedRect(context, x, y, w, h, 5, bgCol);
+                bgCol = AnimationUtil.lerpColor(EclipseColors.BG_CARD, EclipseColors.BG_HOVER, eclipseHoverAnim);
+                int defaultBorder = isEclipseBtn ? EclipseColors.TEXT_SECONDARY : EclipseColors.BORDER;
+                borderCol = AnimationUtil.lerpColor(defaultBorder, EclipseColors.BORDER_ACTIVE, eclipseHoverAnim);
+                RenderUtils.drawFlatCard(context, x, y, w, h, bgCol, borderCol);
 
-                // 2. Плавная обводка (от приглушенного #232533 к акцентному золотисто-фиолетовому)
-                int defaultBorder = isEclipseBtn
-                        ? EclipseTheme.lerpColor(EclipseTheme.ACCENT_GOLD, EclipseTheme.ACCENT_INDIGO, 0.5f)
-                        : EclipseTheme.PANEL_BORDER;
-                int hoverBorder = isEclipseBtn ? EclipseTheme.ACCENT_GOLD : EclipseTheme.ACCENT_INDIGO;
-                borderCol = AnimationUtil.lerpColor(defaultBorder, hoverBorder, eclipseHoverAnim);
-                RenderUtils.drawRoundedOutline(context, x, y, w, h, 5, borderCol);
-
-                // 3. Мягкое неоновое свечение при наведении или нажатии
-                if (eclipseHoverAnim > 0.05f) {
-                    int glowCol = EclipseTheme.multiplyAlpha(EclipseTheme.ACCENT_INDIGO, (eclipseHoverAnim * 0.40f) + (eclipsePressAnim * 0.25f));
-                    RenderUtils.drawSoftGlow(context, x, y, w, h, 5, 3, glowCol);
-                } else if (isEclipseBtn) {
-                    int glowCol = EclipseTheme.multiplyAlpha(EclipseTheme.ACCENT_GOLD, 0.15f);
-                    RenderUtils.drawSoftGlow(context, x, y, w, h, 5, 2, glowCol);
-                }
-
-                // 4. Интерактивная расходящаяся неоновая волна при клике (Click Ripple)
+                // Чёткая белая волна при клике (без цветных акцентов)
                 long rippleAge = now - eclipseRippleStartTime;
-                if (rippleAge < 360) {
-                    float ripProg = (float) rippleAge / 360.0f;
+                if (rippleAge < 300) {
+                    float ripProg = (float) rippleAge / 300.0f;
                     float maxR = Math.max(w, h) * 0.85f;
                     float curR = ripProg * maxR;
-                    int ripAlpha = (int) ((1.0f - ripProg) * 110.0f);
+                    int ripAlpha = (int) ((1.0f - ripProg) * 38.0f);
                     if (ripAlpha > 2) {
-                        int ripColor = (ripAlpha << 24) | (EclipseTheme.ACCENT_GOLD & 0x00FFFFFF);
+                        int ripColor = (ripAlpha << 24) | (EclipseColors.ACCENT_WHITE & 0x00FFFFFF);
                         int rx1 = (int) Math.max(x + 1, x + eclipseRippleX - curR);
                         int ry1 = (int) Math.max(y + 1, y + eclipseRippleY - curR);
                         int rx2 = (int) Math.min(x + w - 1, x + eclipseRippleX + curR);
@@ -176,12 +149,10 @@ public abstract class PressableWidgetMixin extends ClickableWidget {
                     }
                 }
 
-                textColor = AnimationUtil.lerpColor(isEclipseBtn ? EclipseTheme.ACCENT_GOLD : EclipseTheme.TEXT_PRIMARY, 0xFFFFFFFF, eclipseHoverAnim);
+                textColor = EclipseColors.TEXT_PRIMARY;
             }
 
-            // 5. Легкий тактильный сдвиг текста на 1.5px вверх при наведении и возврат при нажатии
-            int yShift = this.active ? (int) (-1.5f * eclipseHoverAnim + 1.0f * eclipsePressAnim) : 0;
-
+            int yShift = this.active ? (int) (-1.0f * eclipseHoverAnim + 1.0f * eclipsePressAnim) : 0;
             TextRenderer tr = mc.textRenderer;
             if (tr != null) {
                 RenderUtils.drawCenteredTextWithShadow(context, tr, this.getMessage(), x + w / 2, y + (h - 8) / 2 + yShift, textColor);

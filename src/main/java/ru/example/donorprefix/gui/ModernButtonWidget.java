@@ -131,168 +131,93 @@ public class ModernButtonWidget extends ClickableWidget {
         int textColor;
 
         if (!this.active) {
-            bgColor = 0x1F0F1218;
-            borderColor = 0x28202836;
-            textColor = 0x445A6578;
+            bgColor = EclipseColors.BG_WINDOW;
+            borderColor = EclipseColors.BORDER;
+            textColor = EclipseColors.TEXT_DISABLED;
         } else {
             switch (style) {
-                case PRIMARY -> {
-                    bgColor = hovered ? 0xFF1F2233 : 0xFF161824;
-                    borderColor = 0;
-                    textColor = hovered ? 0xFFFFFFFF : 0xFFEAECEF;
+                case PRIMARY, STATUS_ACTIVE -> {
+                    bgColor = hovered ? 0xFFFFFFFF : EclipseColors.ACCENT_WHITE;
+                    borderColor = EclipseColors.BORDER_ACTIVE;
+                    textColor = EclipseColors.TEXT_ON_ACCENT;
                 }
-                case SECONDARY -> {
+                case SECONDARY, ACTION_NAV, STEPPER, TAB_INACTIVE -> {
                     if (hovered) {
-                        bgColor = 0x33232533;
-                        borderColor = 0xFF6A67CE;
-                        textColor = 0xFFFFFFFF;
+                        bgColor = EclipseColors.BG_HOVER;
+                        borderColor = EclipseColors.BORDER_ACTIVE;
+                        textColor = EclipseColors.TEXT_PRIMARY;
                     } else {
-                        bgColor = 0xFF101118;
-                        borderColor = 0xFF1C1E2B;
-                        textColor = 0xFF7D8296;
+                        bgColor = EclipseColors.BG_CARD;
+                        borderColor = EclipseColors.BORDER;
+                        textColor = EclipseColors.TEXT_SECONDARY;
                     }
                 }
                 case DANGER, ACTION_DELETE -> {
                     if (hovered) {
-                        bgColor = 0xFF4D242D;
-                        borderColor = 0xFFE06C75;
-                        textColor = 0xFFFFFFFF;
+                        bgColor = EclipseColors.ACCENT_WHITE;
+                        borderColor = EclipseColors.BORDER_ACTIVE;
+                        textColor = EclipseColors.TEXT_ON_ACCENT;
                     } else {
-                        bgColor = 0xFF3A1D24;
-                        borderColor = 0x55E06C75;
-                        textColor = 0xFFE06C75;
+                        bgColor = EclipseColors.BG_HOVER;
+                        borderColor = EclipseColors.BORDER;
+                        textColor = EclipseColors.TEXT_VERSION;
                     }
                 }
                 case ACTION_TEST -> {
                     if (hovered) {
-                        bgColor = 0x4D6A67CE;
-                        borderColor = 0xFFF5A65B;
-                        textColor = 0xFFFFFFFF;
+                        bgColor = EclipseColors.ACCENT_WHITE;
+                        borderColor = EclipseColors.BORDER_ACTIVE;
+                        textColor = EclipseColors.TEXT_ON_ACCENT;
                     } else {
-                        bgColor = 0x266A67CE;
-                        borderColor = 0xFF6A67CE;
-                        textColor = 0xFF6A67CE;
-                    }
-                }
-                case ACTION_NAV -> {
-                    if (hovered) {
-                        bgColor = 0xFF1C1E2B;
-                        borderColor = 0xFF383A52;
-                        textColor = 0xFFFFFFFF;
-                    } else {
-                        bgColor = 0xFF101118;
-                        borderColor = 0xFF232533;
-                        textColor = 0xFF7D8296;
-                    }
-                }
-                case STEPPER -> {
-                    if (hovered) {
-                        bgColor = 0xFF1C1E2B;
-                        borderColor = 0xFF383A52;
-                        textColor = 0xFFFFFFFF;
-                    } else {
-                        bgColor = 0xFF101118;
-                        borderColor = 0xFF232533;
-                        textColor = 0xFFA0A5B8;
-                    }
-                }
-                case STATUS_ACTIVE -> {
-                    if (hovered) {
-                        bgColor = 0x44065F46;
-                        borderColor = 0xFF34D399;
-                        textColor = 0xFF6EE7B7;
-                    } else {
-                        bgColor = 0x28064E3B;
-                        borderColor = 0x77059669;
-                        textColor = 0xFFA7F3D0;
+                        bgColor = EclipseColors.BG_SIDEBAR_ACTIVE;
+                        borderColor = EclipseColors.BORDER;
+                        textColor = EclipseColors.TEXT_PRIMARY;
                     }
                 }
                 case STATUS_PAUSED -> {
                     if (hovered) {
-                        bgColor = 0xFF241F1A;
-                        borderColor = 0xFF6A4A32;
-                        textColor = 0xFFFFD38A;
+                        bgColor = EclipseColors.BG_HOVER;
+                        borderColor = EclipseColors.BORDER_ACTIVE;
+                        textColor = EclipseColors.TEXT_PRIMARY;
                     } else {
-                        bgColor = 0xFF191614;
-                        borderColor = 0xFF4A3525;
-                        textColor = 0xFFF5A65B;
+                        bgColor = EclipseColors.TRACK_BG;
+                        borderColor = EclipseColors.BORDER;
+                        textColor = EclipseColors.TEXT_SECONDARY;
                     }
                 }
                 case TAB_ACTIVE -> {
-                    bgColor = hovered ? 0xFF1F2233 : 0xFF161824;
-                    borderColor = 0xFF383A52;
-                    textColor = 0xFFFFFFFF;
+                    bgColor = hovered ? EclipseColors.BG_HOVER : EclipseColors.BG_SIDEBAR_ACTIVE;
+                    borderColor = EclipseColors.BORDER_ACTIVE;
+                    textColor = EclipseColors.TEXT_PRIMARY;
                 }
-                case TAB_INACTIVE -> {
-                    if (hovered) {
-                        bgColor = 0x2A1C2030;
-                        borderColor = 0xFF282A3A;
-                        textColor = 0xFFEAECEF;
-                    } else {
-                        bgColor = 0x14101118;
-                        borderColor = 0x00000000;
-                        textColor = 0xFF7D8296;
-                    }
-                }
-
-                case TOGGLE_ON -> {
-                    if (hovered) {
-                        bgColor = 0x667C3AED;
-                        borderColor = 0xFFC084FC;
-                        textColor = 0xFFFFFFFF;
-                    } else {
-                        bgColor = 0x446D28D9;
-                        borderColor = 0xFFA855F7;
-                        textColor = 0xFFF3E8FF;
-                    }
+                case TOGGLE_ON, PRESET_ACTIVE -> {
+                    bgColor = hovered ? 0xFFFFFFFF : EclipseColors.ACCENT_WHITE;
+                    borderColor = EclipseColors.BORDER_ACTIVE;
+                    textColor = EclipseColors.TEXT_ON_ACCENT;
                 }
                 case TOGGLE_OFF -> {
                     if (hovered) {
-                        bgColor = 0x351E293B;
-                        borderColor = 0x5564748B;
-                        textColor = 0xFFE2E8F0;
+                        bgColor = EclipseColors.BG_HOVER;
+                        borderColor = EclipseColors.BORDER_ACTIVE;
+                        textColor = EclipseColors.TEXT_PRIMARY;
                     } else {
-                        bgColor = 0x20111827;
-                        borderColor = 0x33334155;
-                        textColor = 0xFF94A3B8;
+                        bgColor = EclipseColors.TRACK_BG;
+                        borderColor = EclipseColors.BORDER;
+                        textColor = EclipseColors.TEXT_SECONDARY;
                     }
                 }
-                case PRESET_ACTIVE -> {
-                    bgColor = hovered ? 0x887C3AED : 0x666D28D9;
-                    borderColor = 0xFFA855F7;
-                    textColor = 0xFFFFFFFF;
-                }
                 default -> {
-                    bgColor = 0x28161F2E;
-                    borderColor = 0x33334155;
-                    textColor = 0xFFCBD5E1;
+                    bgColor = EclipseColors.BG_CARD;
+                    borderColor = EclipseColors.BORDER;
+                    textColor = EclipseColors.TEXT_PRIMARY;
                 }
             }
         }
 
-        // Плавное внешнее свечение при наведении
-        if (this.hoverAnim > 0.05f && this.active) {
-            int glowColor = (style == Style.PRIMARY)
-                    ? RenderUtils.multiplyAlpha(0xFF6A67CE, this.hoverAnim * 0.45f)
-                    : EclipseTheme.multiplyAlpha(EclipseTheme.ACCENT_INDIGO, this.hoverAnim * 0.35f);
-            RenderUtils.drawSoftGlow(context, x, y, w, h, cornerRadius, 3, glowColor);
-        }
+        // Строгая плоская монохромная кнопка с 1px рамкой
+        RenderUtils.drawFlatCard(context, x, y, w, h, bgColor, borderColor);
 
-        // Отрисовка фона и рамки со сглаженными углами
-        if (style == Style.PRIMARY && this.active) {
-            RenderUtils.drawRoundedRect(context, x, y, w, h, cornerRadius, bgColor);
-            int gold = hovered ? 0xFFFFD38A : 0xFFF5A65B;
-            int indigo = hovered ? 0xFF8B88EE : 0xFF6A67CE;
-            RenderUtils.drawGradientRoundedOutline(context, x, y, w, h, cornerRadius, gold, indigo);
-        } else {
-            RenderUtils.drawRoundedRect(context, x, y, w, h, cornerRadius, bgColor);
-            if ((borderColor & 0xFF000000) != 0) {
-                RenderUtils.drawRoundedOutline(context, x, y, w, h, cornerRadius, borderColor);
-            }
-        }
-
-        // Текст кнопки по центру с микро-сдвигом на 1.5px вверх при наведении и пружинящим откликом
-        int yShift = Math.round(-1.5f * this.hoverAnim + this.clickAnim * 1.5f);
+        int yShift = Math.round(-1.0f * this.hoverAnim + this.clickAnim * 1.0f);
         int textY = y + (h - 8) / 2 + yShift;
         RenderUtils.drawCenteredTextWithShadow(context, textRenderer, this.getMessage(), x + w / 2, textY, textColor);
     }

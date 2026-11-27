@@ -4,21 +4,20 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 import ru.example.donorprefix.visual.CPSCounter;
 import ru.example.donorprefix.visual.VisualConfig;
 
 /**
- * HUD-виджет Keystrokes:
- * Отображает клавиши W, A, S, D, кнопки мыши (LMB/RMB) со счетчиком CPS и полоску Space.
- * Размеры элемента строго охватывают все кнопки (72 x 86).
+ * HUD-виджет Keystrokes в строгом монохромном стиле с резкой инверсией при нажатии.
  */
 public class KeystrokesHudElement extends HudElement {
 
     public static final int KEY_SIZE = 22;
     public static final int GAP = 3;
     public static final int TOTAL_WIDTH = KEY_SIZE * 3 + GAP * 2; // 72
-    public static final int TOTAL_HEIGHT = 86; // 22 + 3 + 22 + 3 + 22 + 3 + 11 = 86
+    public static final int TOTAL_HEIGHT = 86;
 
     private static final Text LABEL_W = Text.literal("W").formatted(Formatting.BOLD);
     private static final Text LABEL_A = Text.literal("A").formatted(Formatting.BOLD);
@@ -30,16 +29,8 @@ public class KeystrokesHudElement extends HudElement {
 
     private int lastLmbCps = Integer.MIN_VALUE;
     private int lastRmbCps = Integer.MIN_VALUE;
-    private Text cachedLmbSub = Text.literal("0 CPS").formatted(Formatting.GRAY);
-    private Text cachedRmbSub = Text.literal("0 CPS").formatted(Formatting.GRAY);
-
-    private float wAnim = 0f;
-    private float aAnim = 0f;
-    private float sAnim = 0f;
-    private float dAnim = 0f;
-    private float lmbAnim = 0f;
-    private float rmbAnim = 0f;
-    private float spaceAnim = 0f;
+    private Text cachedLmbSub = Text.literal("0 CPS");
+    private Text cachedRmbSub = Text.literal("0 CPS");
 
     public KeystrokesHudElement() {
         super("keystrokes", "Keystrokes", TOTAL_WIDTH, TOTAL_HEIGHT);
@@ -57,62 +48,45 @@ public class KeystrokesHudElement extends HudElement {
         boolean rmbDown = client.options != null && client.options.useKey.isPressed();
         boolean spaceDown = client.options != null && client.options.jumpKey.isPressed();
 
-        wAnim += ((wDown ? 1f : 0f) - wAnim) * 0.35f;
-        aAnim += ((aDown ? 1f : 0f) - aAnim) * 0.35f;
-        sAnim += ((sDown ? 1f : 0f) - sAnim) * 0.35f;
-        dAnim += ((dDown ? 1f : 0f) - dAnim) * 0.35f;
-        lmbAnim += ((lmbDown ? 1f : 0f) - lmbAnim) * 0.35f;
-        rmbAnim += ((rmbDown ? 1f : 0f) - rmbAnim) * 0.35f;
-        spaceAnim += ((spaceDown ? 1f : 0f) - spaceAnim) * 0.35f;
-
         int lmbCps = CPSCounter.getLeftCps();
         int rmbCps = CPSCounter.getRightCps();
         if (lmbCps != lastLmbCps) {
             lastLmbCps = lmbCps;
-            cachedLmbSub = Text.literal(lmbCps + " CPS").formatted(Formatting.GRAY);
+            cachedLmbSub = Text.literal(lmbCps + " CPS");
         }
         if (rmbCps != lastRmbCps) {
             lastRmbCps = rmbCps;
-            cachedRmbSub = Text.literal(rmbCps + " CPS").formatted(Formatting.GRAY);
+            cachedRmbSub = Text.literal(rmbCps + " CPS");
         }
 
-        VisualConfig cfg = VisualConfig.getInstance();
+        drawKey(context, client, KEY_SIZE + GAP, 0, KEY_SIZE, KEY_SIZE, LABEL_W, null, wDown);
 
-        // Отрисовка СТРОГО от (0, 0)
-        // Ряд 1: [   ] [ W ] [   ]
-        drawKey(context, client, cfg, KEY_SIZE + GAP, 0, KEY_SIZE, KEY_SIZE, LABEL_W, null, wAnim);
+        int r2Y = KEY_SIZE + GAP;
+        drawKey(context, client, 0, r2Y, KEY_SIZE, KEY_SIZE, LABEL_A, null, aDown);
+        drawKey(context, client, KEY_SIZE + GAP, r2Y, KEY_SIZE, KEY_SIZE, LABEL_S, null, sDown);
+        drawKey(context, client, (KEY_SIZE + GAP) * 2, r2Y, KEY_SIZE, KEY_SIZE, LABEL_D, null, dDown);
 
-        // Ряд 2: [ A ] [ S ] [ D ]
-        int r2Y = KEY_SIZE + GAP; // 25
-        drawKey(context, client, cfg, 0, r2Y, KEY_SIZE, KEY_SIZE, LABEL_A, null, aAnim);
-        drawKey(context, client, cfg, KEY_SIZE + GAP, r2Y, KEY_SIZE, KEY_SIZE, LABEL_S, null, sAnim);
-        drawKey(context, client, cfg, (KEY_SIZE + GAP) * 2, r2Y, KEY_SIZE, KEY_SIZE, LABEL_D, null, dAnim);
+        int r3Y = r2Y + KEY_SIZE + GAP;
+        int mouseW = (TOTAL_WIDTH - GAP) / 2;
+        int mouseW2 = TOTAL_WIDTH - GAP - mouseW;
+        drawKey(context, client, 0, r3Y, mouseW, KEY_SIZE, LABEL_LMB, cachedLmbSub, lmbDown);
+        drawKey(context, client, mouseW + GAP, r3Y, mouseW2, KEY_SIZE, LABEL_RMB, cachedRmbSub, rmbDown);
 
-        // Ряд 3: [ LMB + CPS ] [ RMB + CPS ]
-        int r3Y = r2Y + KEY_SIZE + GAP; // 50
-        int mouseW = (TOTAL_WIDTH - GAP) / 2; // 34
-        int mouseW2 = TOTAL_WIDTH - GAP - mouseW; // 35
-        drawKey(context, client, cfg, 0, r3Y, mouseW, KEY_SIZE, LABEL_LMB, cachedLmbSub, lmbAnim);
-        drawKey(context, client, cfg, mouseW + GAP, r3Y, mouseW2, KEY_SIZE, LABEL_RMB, cachedRmbSub, rmbAnim);
-
-        // Ряд 4: [ _______ SPACE _______ ]
-        int r4Y = r3Y + KEY_SIZE + GAP; // 75
-        drawKey(context, client, cfg, 0, r4Y, TOTAL_WIDTH, 11, LABEL_SPACE, null, spaceAnim);
+        int r4Y = r3Y + KEY_SIZE + GAP;
+        drawKey(context, client, 0, r4Y, TOTAL_WIDTH, 11, LABEL_SPACE, null, spaceDown);
     }
 
-    private void drawKey(DrawContext context, MinecraftClient client, VisualConfig cfg, int x, int y, int w, int h, Text label, Text sub, float pressAnim) {
-        int baseBg = cfg.themeBgColor;
-        int activeBg = RenderUtils.lerpColor(baseBg, cfg.themePrimaryColor, pressAnim * 0.8f);
-        int border = RenderUtils.lerpColor(cfg.themeOutlineColor, cfg.themePrimaryColor, pressAnim);
+    private void drawKey(DrawContext context, MinecraftClient client, int x, int y, int w, int h, Text label, Text sub, boolean down) {
+        int bg = down ? EclipseColors.ACCENT_WHITE : EclipseColors.BG_HUD;
+        int border = down ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER;
+        int textCol = down ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY;
+        int subCol = down ? EclipseColors.TEXT_DISABLED : EclipseColors.TEXT_MUTED_HUD;
 
-        RenderUtils.drawRoundedRect(context, x, y, w, h, 4, activeBg);
-        RenderUtils.drawRoundedOutline(context, x, y, w, h, 4, border);
-
-        int textCol = RenderUtils.lerpColor(cfg.themeTextColor, 0xFFFFFFFF, pressAnim);
+        RenderUtils.drawFlatCard(context, x, y, w, h, bg, border);
 
         if (sub != null) {
             RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, label, x + w / 2, y + 2, textCol);
-            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, sub, x + w / 2, y + 11, cfg.themeSubtextColor);
+            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, sub, x + w / 2, y + 11, subCol);
         } else {
             int textY = y + (h - 8) / 2;
             RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, label, x + w / 2, textY, textCol);

@@ -2,23 +2,27 @@ package ru.example.donorprefix.hud;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 import ru.example.donorprefix.visual.CPSCounter;
 import ru.example.donorprefix.visual.VisualConfig;
 
 /**
- * HUD-виджет CPS:
- * Отображает клики в секунду (LMB & RMB).
+ * HUD-виджет CPS в строгом монохромном стиле.
  */
 public class CpsHudElement extends HudElement {
 
+    private static final String UNIT = " CPS";
+
     private int lastLmb = Integer.MIN_VALUE;
     private int lastRmb = Integer.MIN_VALUE;
-    private String cachedText = "0 │ 0 CPS";
-    private int cachedWidth = 80;
+    private String cachedVal = "0 | 0";
+    private int cachedValW = 24;
+    private int cachedUnitW = -1;
+    private int cachedTotalW = 72;
 
     public CpsHudElement() {
-        super("cps", "CPS", 80, 16);
+        super("cps", "CPS", 72, 16);
     }
 
     @Override
@@ -26,20 +30,29 @@ public class CpsHudElement extends HudElement {
         MinecraftClient client = MinecraftClient.getInstance();
         VisualConfig cfg = VisualConfig.getInstance();
 
+        if (cachedUnitW < 0) {
+            cachedUnitW = client.textRenderer.getWidth(UNIT);
+        }
         int lmb = CPSCounter.getLeftCps();
         int rmb = CPSCounter.getRightCps();
         if (lmb != lastLmb || rmb != lastRmb) {
             lastLmb = lmb;
             lastRmb = rmb;
-            cachedText = lmb + " │ " + rmb + " CPS";
-            cachedWidth = client.textRenderer.getWidth(cachedText) + 16;
+            cachedVal = lmb + " | " + rmb;
+            cachedValW = client.textRenderer.getWidth(cachedVal);
+            cachedTotalW = cachedValW + cachedUnitW + 16;
         }
-        this.width = cachedWidth;
+        this.width = cachedTotalW;
         this.height = 16;
 
-        // Отрисовка СТРОГО от (0, 0)
-        RenderUtils.drawPill(context, 0, 0, this.width, this.height, cfg.themeBgColor, cfg.themeOutlineColor);
-        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedText, 8, 4, cfg.themeTextColor);
+        int bg = cfg.themePreset == 2 ? cfg.themeBgColor : EclipseColors.BG_HUD;
+        int border = cfg.themePreset == 2 ? cfg.themeOutlineColor : EclipseColors.BORDER;
+        int valCol = cfg.themePreset == 2 ? cfg.themeTextColor : EclipseColors.TEXT_PRIMARY;
+        int unitCol = cfg.themePreset == 2 ? cfg.themeSubtextColor : EclipseColors.TEXT_MUTED_HUD;
+
+        RenderUtils.drawFlatCard(context, 0, 0, this.width, this.height, bg, border);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedVal, 8, 4, valCol);
+        RenderUtils.drawTextWithShadow(context, client.textRenderer, UNIT, 8 + cachedValW, 4, unitCol);
     }
 
     @Override

@@ -209,12 +209,12 @@ public class HudEditorScreen extends Screen {
         wasLeftDown = leftDown;
         wasRightDown = rightDown;
 
-        // 6. Полупрозрачный темный фон
-        context.fill(0, 0, this.width, this.height, 0xD0070103);
+        // 6. Тёмная монохромная подложка
+        context.fill(0, 0, this.width, this.height, 0xD009090B);
 
-        // 7. Координатная сетка (#15FFFFFF)
+        // 7. Тонкая координатная сетка
         int gridSize = 20;
-        int gridColor = 0x15FFFFFF;
+        int gridColor = EclipseColors.EDITOR_GRID;
         for (int gx = 0; gx < this.width; gx += gridSize) {
             context.fill(gx, 0, gx + 1, this.height, gridColor);
         }
@@ -222,10 +222,10 @@ public class HudEditorScreen extends Screen {
             context.fill(0, gy, this.width, gy + 1, gridColor);
         }
 
-        // 8. Центральные направляющие линии
+        // 8. Центральные монохромные направляющие линии (1px)
         int centerX = this.width / 2;
         int centerY = this.height / 2;
-        int guideColor = 0x33FF1744;
+        int guideColor = EclipseColors.EDITOR_GUIDE;
         context.fill(centerX, 0, centerX + 1, this.height, guideColor);
         context.fill(0, centerY, this.width, centerY + 1, guideColor);
 
@@ -241,13 +241,11 @@ public class HudEditorScreen extends Screen {
         int hintW = this.textRenderer.getWidth(hint);
         int hintX = (this.width - hintW) / 2;
         int hintY = 6;
-        context.fill(hintX - 8, hintY - 3, hintX + hintW + 8, hintY + 12, 0xD00A0A10);
-        RenderUtils.drawBorder(context, hintX - 8, hintY - 3, hintW + 16, 15, 0x40F5A65B);
-        context.drawTextWithShadow(this.textRenderer, hint, hintX, hintY + 1, 0xFFEAECEF);
+        RenderUtils.drawFlatCard(context, hintX - 8, hintY - 3, hintW + 16, 15, EclipseColors.BG_CARD, EclipseColors.BORDER);
+        context.drawTextWithShadow(this.textRenderer, hint, hintX, hintY + 1, EclipseColors.TEXT_PRIMARY);
 
         // 11. Отрисовка панели управления масштабом
-        context.fill(toolbarX, toolbarY, toolbarX + toolbarW, toolbarY + toolbarH, 0xD50E0E18);
-        RenderUtils.drawBorder(context, toolbarX, toolbarY, toolbarW, toolbarH, 0x50F5A65B);
+        RenderUtils.drawFlatCard(context, toolbarX, toolbarY, toolbarW, toolbarH, EclipseColors.BG_CARD, EclipseColors.BORDER);
 
         float curScale = (targetScaleElement != null) ? targetScaleElement.scale : Float.NaN;
         if (cachedToolbarElement != targetScaleElement || Float.compare(cachedToolbarScale, curScale) != 0) {
@@ -269,22 +267,19 @@ public class HudEditorScreen extends Screen {
         context.drawTextWithShadow(this.textRenderer, cachedToolbarLabel, toolbarX + 6, toolbarY + 5, 0xFFEAECEF);
 
         // Кнопка [-]
-        int bgMinus = hoverMinus ? 0xFF4A4B65 : 0xFF232435;
-        context.fill(btnMinusX, btnMinusY, btnMinusX + btnMinusW, btnMinusY + btnMinusH, bgMinus);
-        RenderUtils.drawBorder(context, btnMinusX, btnMinusY, btnMinusW, btnMinusH, hoverMinus ? 0xFFF5A65B : 0xFF3D3E56);
-        context.drawTextWithShadow(this.textRenderer, "-", btnMinusX + 8, btnMinusY + 3, 0xFFFFFFFF);
+        int bgMinus = hoverMinus ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
+        RenderUtils.drawFlatCard(context, btnMinusX, btnMinusY, btnMinusW, btnMinusH, bgMinus, hoverMinus ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER);
+        context.drawTextWithShadow(this.textRenderer, "-", btnMinusX + 8, btnMinusY + 3, hoverMinus ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
 
         // Кнопка [1.0x]
-        int bgReset = hoverReset ? 0xFF4A4B65 : 0xFF232435;
-        context.fill(btnResetX, btnResetY, btnResetX + btnResetW, btnResetY + btnResetH, bgReset);
-        RenderUtils.drawBorder(context, btnResetX, btnResetY, btnResetW, btnResetH, hoverReset ? 0xFFF5A65B : 0xFF3D3E56);
-        context.drawTextWithShadow(this.textRenderer, "1.0x", btnResetX + 8, btnResetY + 3, 0xFFFFFFFF);
+        int bgReset = hoverReset ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
+        RenderUtils.drawFlatCard(context, btnResetX, btnResetY, btnResetW, btnResetH, bgReset, hoverReset ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER);
+        context.drawTextWithShadow(this.textRenderer, "1.0x", btnResetX + 8, btnResetY + 3, hoverReset ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
 
         // Кнопка [+]
-        int bgPlus = hoverPlus ? 0xFF4A4B65 : 0xFF232435;
-        context.fill(btnPlusX, btnPlusY, btnPlusX + btnPlusW, btnPlusY + btnPlusH, bgPlus);
-        RenderUtils.drawBorder(context, btnPlusX, btnPlusY, btnPlusW, btnPlusH, hoverPlus ? 0xFFF5A65B : 0xFF3D3E56);
-        context.drawTextWithShadow(this.textRenderer, "+", btnPlusX + 7, btnPlusY + 3, 0xFFFFFFFF);
+        int bgPlus = hoverPlus ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
+        RenderUtils.drawFlatCard(context, btnPlusX, btnPlusY, btnPlusW, btnPlusH, bgPlus, hoverPlus ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER);
+        context.drawTextWithShadow(this.textRenderer, "+", btnPlusX + 7, btnPlusY + 3, hoverPlus ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
 
         super.render(context, mouseX, mouseY, delta);
     }

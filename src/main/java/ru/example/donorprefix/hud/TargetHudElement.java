@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.MathHelper;
 import org.joml.Matrix3x2fStack;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.RenderUtils;
 import ru.example.donorprefix.visual.TargetHUDManager;
 import ru.example.donorprefix.visual.VisualConfig;
@@ -105,24 +106,20 @@ public class TargetHudElement extends HudElement {
         }
 
         try {
-            int bgCol = RenderUtils.multiplyAlpha(cfg.themeBgColor, animAlpha);
-            int glowCol = RenderUtils.multiplyAlpha(cfg.themeGlowColor, animAlpha);
-            int outlineCol = RenderUtils.multiplyAlpha(cfg.themeOutlineColor, animAlpha);
-            int cardCol = RenderUtils.multiplyAlpha(cfg.themeCardColor, animAlpha);
-            int textCol = RenderUtils.multiplyAlpha(cfg.themeTextColor, animAlpha);
-            int subtextCol = RenderUtils.multiplyAlpha(cfg.themeSubtextColor, animAlpha);
+            int bgCol = RenderUtils.multiplyAlpha(EclipseColors.BG_HUD, animAlpha);
+            int outlineCol = RenderUtils.multiplyAlpha(EclipseColors.BORDER, animAlpha);
+            int cardCol = RenderUtils.multiplyAlpha(EclipseColors.BG_CARD, animAlpha);
+            int textCol = RenderUtils.multiplyAlpha(EclipseColors.TEXT_PRIMARY, animAlpha);
+            int subtextCol = RenderUtils.multiplyAlpha(EclipseColors.TEXT_MUTED_HUD, animAlpha);
 
-            // 1. Отрисовка подложки СТРОГО от (0, 0)
-            RenderUtils.drawSoftGlow(context, 0, 0, this.width, this.height, 8, 2, glowCol);
-            RenderUtils.drawRoundedRect(context, 0, 0, this.width, this.height, 8, bgCol);
-            RenderUtils.drawRoundedOutline(context, 0, 0, this.width, this.height, 8, outlineCol);
+            // 1. Плоская монохромная подложка
+            RenderUtils.drawFlatCard(context, 0, 0, this.width, this.height, bgCol, outlineCol);
 
             // 2. Аватарка / Рамка под модельку (7, 7, 30, 30)
             int avatarSize = 30;
             int avatarX = 7;
             int avatarY = 7;
-            RenderUtils.drawRoundedRect(context, avatarX, avatarY, avatarSize, avatarSize, 6, cardCol);
-            RenderUtils.drawRoundedOutline(context, avatarX, avatarY, avatarSize, avatarSize, 6, outlineCol);
+            RenderUtils.drawFlatCard(context, avatarX, avatarY, avatarSize, avatarSize, cardCol, outlineCol);
 
             if (displayEntity != null && cfg.targetHud3DModel) {
                 try {
@@ -135,28 +132,28 @@ public class TargetHudElement extends HudElement {
                     );
                 } catch (Throwable ignored) {}
             } else {
-                RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, "✦", avatarX + avatarSize / 2, avatarY + 10, RenderUtils.multiplyAlpha(cfg.themePrimaryColor, animAlpha));
+                RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, "E", avatarX + avatarSize / 2, avatarY + 11, textCol);
             }
 
             // 3. Тексты
             RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedTargetName, 42, 9, textCol);
             RenderUtils.drawTextWithShadow(context, client.textRenderer, cachedDistStr, this.width - cachedDistW - 7, 9, subtextCol);
 
-            // 4. Полоса здоровья
+            // 4. Полоса здоровья (монохром)
             int barX = 42;
             int barY = 24;
             int barW = this.width - barX - 7; // 111 px
             int barH = 8;
             float hpRatio = MathHelper.clamp(animHp / maxHp, 0f, 1f);
 
-            RenderUtils.drawRoundedRect(context, barX, barY, barW, barH, 3, RenderUtils.multiplyAlpha(0x66000000, animAlpha));
+            context.fill(barX, barY, barX + barW, barY + barH, RenderUtils.multiplyAlpha(EclipseColors.TRACK_BG, animAlpha));
             int fillW = (int) (barW * hpRatio);
             if (fillW > 0) {
-                int hpColor = RenderUtils.lerpColor(0xFFEF4444, 0xFF10B981, hpRatio);
-                RenderUtils.drawRoundedRect(context, barX, barY, fillW, barH, 3, RenderUtils.multiplyAlpha(hpColor, animAlpha));
+                context.fill(barX, barY, barX + fillW, barY + barH, RenderUtils.multiplyAlpha(EclipseColors.ACCENT_WHITE, animAlpha));
             }
 
-            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, cachedHpStr, barX + barW / 2, barY - 1, RenderUtils.multiplyAlpha(0xFFFFFFFF, animAlpha));
+            RenderUtils.drawCenteredTextWithShadow(context, client.textRenderer, cachedHpStr, barX + barW / 2, barY - 1,
+                    RenderUtils.multiplyAlpha(hpRatio > 0.55f ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY, animAlpha));
         } finally {
             if (matrices != null) {
                 matrices.popMatrix();

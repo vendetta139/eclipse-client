@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.example.donorprefix.gui.AnimationUtil;
 import ru.example.donorprefix.gui.CosmicBackgroundRenderer;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.RenderUtils;
 
@@ -103,7 +104,7 @@ public abstract class ScreenMixin {
         if (this.client.world == null) {
             CosmicBackgroundRenderer.render(context, this.width, this.height, 1.0f);
         } else {
-            context.fillGradient(0, 0, this.width, this.height, 0xB00B0B10, 0xD012131C);
+            context.fillGradient(0, 0, this.width, this.height, 0xB809090B, 0xD8121215);
         }
     }
 
@@ -111,7 +112,7 @@ public abstract class ScreenMixin {
     private void onRenderInGameBg(DrawContext context, CallbackInfo ci) {
         ci.cancel();
         if (context != null) {
-            context.fillGradient(0, 0, this.width, this.height, 0xB00B0B10, 0xD012131C);
+            context.fillGradient(0, 0, this.width, this.height, 0xB809090B, 0xD8121215);
         }
     }
 
@@ -119,7 +120,7 @@ public abstract class ScreenMixin {
     private void onRenderDarkening(DrawContext context, CallbackInfo ci) {
         ci.cancel();
         if (context != null) {
-            context.fillGradient(0, 0, this.width, this.height, 0xB00B0B10, 0xD012131C);
+            context.fillGradient(0, 0, this.width, this.height, 0xB809090B, 0xD8121215);
         }
     }
 
@@ -146,11 +147,9 @@ public abstract class ScreenMixin {
             int badgeX = (this.width - badgeW) / 2;
             int badgeY = 16;
 
-            RenderUtils.drawPill(context, badgeX, badgeY, badgeW, badgeH, 0xE612131C, 0xFF232533);
-            RenderUtils.drawSoftGlow(context, badgeX, badgeY, badgeW, badgeH, 5, 2, 0x336A67CE);
-
+            RenderUtils.drawFlatCard(context, badgeX, badgeY, badgeW, badgeH, EclipseColors.BG_CARD, EclipseColors.BORDER);
             EclipseTheme.drawEclipseBadge(context, badgeX + 6, badgeY + 2, 16, 1.0f);
-            RenderUtils.drawTextWithShadow(context, tr, Text.literal("✦ ECLIPSE"), badgeX + 26, badgeY + 6, 0xFFEAECEF);
+            RenderUtils.drawTextWithShadow(context, tr, Text.literal("ECLIPSE"), badgeX + 28, badgeY + 6, EclipseColors.TEXT_PRIMARY);
         } catch (Throwable ignored) {}
     }
 }

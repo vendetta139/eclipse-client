@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.eclipse.client.ui.clickgui.EclipseClickGui;
 import ru.example.donorprefix.gui.AnimationUtil;
 import ru.example.donorprefix.gui.CosmicBackgroundRenderer;
+import ru.example.donorprefix.gui.EclipseColors;
 import ru.example.donorprefix.gui.EclipseTheme;
 import ru.example.donorprefix.gui.RenderUtils;
 
@@ -47,7 +48,7 @@ public abstract class TitleScreenMixin extends Screen {
     @Inject(method = "render", at = @At("HEAD"))
     private void onRenderHead(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (context != null) {
-            context.fill(0, 0, this.width, this.height, 0xFF0B0B10);
+            context.fill(0, 0, this.width, this.height, EclipseColors.BG_WINDOW);
             CosmicBackgroundRenderer.render(context, this.width, this.height, 1.0f);
         }
     }
@@ -69,7 +70,7 @@ public abstract class TitleScreenMixin extends Screen {
     private void onRedirectVersionText(DrawContext context, TextRenderer textRenderer, String text, int x, int y, int color) {
         if (textRenderer != null && context != null) {
             String customVer = "ECLIPSE CLIENT 1.21.11 | by alone.vendetta";
-            RenderUtils.drawTextWithShadow(context, textRenderer, customVer, 12, this.height - 12, 0xFF4A4E60);
+            RenderUtils.drawTextWithShadow(context, textRenderer, customVer, 12, this.height - 12, EclipseColors.TEXT_SECONDARY);
         }
     }
 
@@ -136,7 +137,7 @@ public abstract class TitleScreenMixin extends Screen {
         ClickableWidget eclipseBtn = existingEclipseBtn;
         if (eclipseBtn == null) {
             eclipseBtn = ButtonWidget.builder(
-                    Text.literal("✦ ECLIPSE CLIENT"),
+                    Text.literal("ECLIPSE CLIENT"),
                     b -> {
                         if (this.client != null) {
                             this.client.setScreen(new EclipseClickGui());
@@ -218,7 +219,7 @@ public abstract class TitleScreenMixin extends Screen {
 
                 String copyright = "© Mojang AB | by alone.vendetta";
                 int copyW = tr.getWidth(copyright);
-                RenderUtils.drawTextWithShadow(context, tr, copyright, this.width - copyW - 10, this.height - 15, 0xFF4A4E60);
+                RenderUtils.drawTextWithShadow(context, tr, copyright, this.width - copyW - 10, this.height - 15, EclipseColors.TEXT_SECONDARY);
             }
         } catch (Throwable ignored) {}
     }
