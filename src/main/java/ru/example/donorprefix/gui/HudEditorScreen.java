@@ -269,17 +269,17 @@ public class HudEditorScreen extends Screen {
         // Кнопка [-]
         int bgMinus = hoverMinus ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
         RenderUtils.drawFlatCard(context, btnMinusX, btnMinusY, btnMinusW, btnMinusH, bgMinus, hoverMinus ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER);
-        context.drawTextWithShadow(this.textRenderer, "-", btnMinusX + 8, btnMinusY + 3, hoverMinus ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
+        RenderUtils.drawTextWithShadow(context, this.textRenderer, "-", btnMinusX + 8, btnMinusY + 3, hoverMinus ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
 
         // Кнопка [1.0x]
         int bgReset = hoverReset ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
         RenderUtils.drawFlatCard(context, btnResetX, btnResetY, btnResetW, btnResetH, bgReset, hoverReset ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER);
-        context.drawTextWithShadow(this.textRenderer, "1.0x", btnResetX + 8, btnResetY + 3, hoverReset ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
+        RenderUtils.drawTextWithShadow(context, this.textRenderer, "1.0x", btnResetX + 8, btnResetY + 3, hoverReset ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
 
         // Кнопка [+]
         int bgPlus = hoverPlus ? EclipseColors.ACCENT_WHITE : EclipseColors.TRACK_BG;
         RenderUtils.drawFlatCard(context, btnPlusX, btnPlusY, btnPlusW, btnPlusH, bgPlus, hoverPlus ? EclipseColors.BORDER_ACTIVE : EclipseColors.BORDER);
-        context.drawTextWithShadow(this.textRenderer, "+", btnPlusX + 7, btnPlusY + 3, hoverPlus ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
+        RenderUtils.drawTextWithShadow(context, this.textRenderer, "+", btnPlusX + 7, btnPlusY + 3, hoverPlus ? EclipseColors.TEXT_ON_ACCENT : EclipseColors.TEXT_PRIMARY);
 
         super.render(context, mouseX, mouseY, delta);
     }

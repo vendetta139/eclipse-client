@@ -352,7 +352,7 @@ public class PrefixMenuScreen extends Screen {
         int hudBtnH = 24;
         int hudBtnY = dialogTop + dialogHeight - 34;
         this.hudEditBtn = ModernButtonWidget.modern(
-                Text.literal("✦ HUD Редактор"),
+                Text.literal("HUD Редактор"),
                 b -> {
                     if (this.client != null) {
                         this.client.setScreen(new HudEditorScreen(this));
@@ -494,7 +494,7 @@ public class PrefixMenuScreen extends Screen {
 
         // Кнопка "Сохранить настройки"
         savePrefixesBtn = ModernButtonWidget.modern(
-                Text.literal("💾 Сохранить и применить"),
+                Text.literal("Сохранить и применить"),
                 b -> savePrefixSettings()
         ).dimensions(0, 0, 150, 22).style(ModernButtonWidget.Style.PRIMARY).build();
         savePrefixesBtn.setCornerRadius(6);
@@ -579,7 +579,7 @@ public class PrefixMenuScreen extends Screen {
             templateField.setVisible(settingsVisible);
         }
         if (savePrefixesBtn != null) {
-            savePrefixesBtn.setX(contentLeft + 6);
+            savePrefixesBtn.setX(contentLeft + 14);
             savePrefixesBtn.setY(settingsY + 74);
             savePrefixesBtn.visible = settingsVisible;
         }

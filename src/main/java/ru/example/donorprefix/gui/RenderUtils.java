@@ -57,14 +57,22 @@ public class RenderUtils {
         }
     }
 
+    private static boolean shouldDrawShadow(int color) {
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        // Тёмный текст на светлом фоне (#09090B и т.п.) без тени выглядит чётко и не расплывается
+        return (r * 299 + g * 587 + b * 114) / 1000 >= 72;
+    }
+
     public static void drawTextWithShadow(DrawContext context, TextRenderer tr, Text text, int x, int y, int color) {
         if (context == null || tr == null || text == null) return;
-        context.drawText(tr, text, x, y, color, true);
+        context.drawText(tr, text, x, y, color, shouldDrawShadow(color));
     }
 
     public static void drawTextWithShadow(DrawContext context, TextRenderer tr, String text, int x, int y, int color) {
         if (context == null || tr == null || text == null) return;
-        context.drawText(tr, text, x, y, color, true);
+        context.drawText(tr, text, x, y, color, shouldDrawShadow(color));
     }
 
     public static void drawText(DrawContext context, TextRenderer tr, Text text, int x, int y, int color) {
